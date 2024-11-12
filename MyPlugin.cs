@@ -8,10 +8,17 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Hearthstone_Deck_Tracker.Utility;
 using Card = Hearthstone_Deck_Tracker.Hearthstone.Card;
 using Core = Hearthstone_Deck_Tracker.API.Core;
-
-
+using System.Windows.Media.Imaging;
+using System.IO;
+using System.Net;
+using System.Security.Policy;
+using HearthDb;
+using HearthDb.Enums;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CardSearcher
 {
@@ -106,13 +113,24 @@ namespace CardSearcher
         static void Main()
         {
             Application app = new Application();
-            // Your code here
-            Log.Info("lizhe");
-            Card card = Database.GetCardFromId("BGS_081");
-            Console.WriteLine("lizhe2");
+
             SearchWindow sw = new SearchWindow();
-            sw.Show();
-            app.Run();
+            //sw.Show();
+            //app.Run();
+            var card = Database.GetCardFromId("BGS_081");
+
+            const string cardId = "BGS_081";
+            var url = $"https://static.zerotoheroes.com/hearthstone/cardart/256x/{cardId}.jpg";
+            var client = new WebClient();
+            client.DownloadFile(url, "ori_image.jpg");
+
+            // Get LocName
+            HearthDb.Card dbCard;
+            Cards.All.TryGetValue(cardId, out dbCard);
+            var name = dbCard.GetLocName(Locale.zhCN);
+
+            var filteredList = Cards.All.Where(kvp => kvp.Key.Contains(cardId)).ToList();
+            Log.Info("done");
         }
     }
 }
