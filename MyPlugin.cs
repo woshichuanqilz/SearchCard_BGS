@@ -117,20 +117,71 @@ namespace CardSearcher
             SearchWindow sw = new SearchWindow();
             //sw.Show();
             //app.Run();
-            var card = Database.GetCardFromId("BGS_081");
+
+            // get Tag
+            var overrides = new Dictionary<int, Tuple<GameTag, int>>();
+            Func<HearthDb.Card, GameTag, int> getTag = (HearthDb.Card card, GameTag tag) =>
+            {
+                if (overrides.TryGetValue(card.DbfId, out var tagOverride) && tagOverride.Item1 == tag)
+                    return tagOverride.Item2;
+                return card.Entity.GetTag(tag);
+            };
+
+            var baconCards = Cards.All.Values
+                .Where(x =>
+                    getTag(x, GameTag.TECH_LEVEL) > 0
+                    && getTag(x, GameTag.IS_BACON_POOL_MINION) > 0
+                );
+            
+            // Get value from baconCards where cardId is BGS_081
+            var baconCard = baconCards.FirstOrDefault(x => x.Id == "BGS_081");
+
+            //var card = Database.GetCardFromId("BG26_147");
+            var hdt_card = Database.GetCardFromId("BGS_081");
 
             const string cardId = "BGS_081";
-            var url = $"https://static.zerotoheroes.com/hearthstone/cardart/256x/{cardId}.jpg";
-            var client = new WebClient();
-            client.DownloadFile(url, "ori_image.jpg");
+            //var url = $"https://static.zerotoheroes.com/hearthstone/cardart/256x/{cardId}.jpg";
+            //var client = new WebClient();
+            //client.DownloadFile(url, "ori_image.jpg");
 
-            // Get LocName
+            //// Get LocName
             HearthDb.Card dbCard;
             Cards.All.TryGetValue(cardId, out dbCard);
             var name = dbCard.GetLocName(Locale.zhCN);
 
             var filteredList = Cards.All.Where(kvp => kvp.Key.Contains(cardId)).ToList();
             Log.Info("done");
+
+            // get all card which method GetLocText result not null and contains "Gold"
+            var goldCards = Cards.All.Where(kvp => kvp.Value.GetLocText(Locale.enUS) != null && kvp.Value.GetLocText(Locale.enUS).Contains("Gold")).ToList();
+            Log.Info($"goldCards: {goldCards.Count}");
+        }
+
+        public BitmapImage GetCardImage(string cardId)
+        {
+            // 如果image文件夹不存在，则创建
+            if (!Directory.Exists("image"))
+            {
+                Directory.CreateDirectory("image");
+            }
+
+            string imagePath = Path.Combine("image", $"{cardId}.jpg");
+
+            // 检查文件是否存在
+            if (File.Exists(imagePath))
+            {
+                return new BitmapImage(new Uri(imagePath, UriKind.Relative));
+            }
+            else
+            {
+                // 下载图片并保存
+                var url = $"https://static.zerotoheroes.com/hearthstone/cardart/256x/{cardId}.jpg";
+                using (var client = new WebClient())
+                {
+                    client.DownloadFile(url, imagePath);
+                }
+                return new BitmapImage(new Uri(imagePath, UriKind.Relative));
+            }
         }
     }
 }
