@@ -45,6 +45,8 @@ namespace CardSearcher
         // 添加一个 List<Race> 变量来保存可用种族
         private List<Race> AvailableRaces { get; set; }
 
+        private IEnumerable<HearthDb.Card> baconCards; // 添加成员变量
+
         /// <summary>
         /// Initializes a new instance of the <see cref="CardSearcher"/> class.
         /// </summary>
@@ -57,6 +59,21 @@ namespace CardSearcher
             // GameEvents.OnGameEnd.Add(CleanUp);
 
             AvailableRaces = new List<Race>(); // 初始化可用种族列表
+
+            var overrides = new Dictionary<int, Tuple<GameTag, int>>();
+            Func<HearthDb.Card, GameTag, int> getTag = (HearthDb.Card card, GameTag tag) =>
+            {
+                if (overrides.TryGetValue(card.DbfId, out var tagOverride) && tagOverride.Item1 == tag)
+                    return tagOverride.Item2;
+                return card.Entity.GetTag(tag);
+            };
+
+            baconCards = Cards.All.Values
+                .Where(x =>
+                    getTag(x, GameTag.TECH_LEVEL) > 0
+                    && getTag(x, GameTag.IS_BACON_POOL_MINION) > 0
+                    && getTag(x, GameTag.IS_BACON_POOL_MINION) > 0
+                ).ToList(); // 将结果存储到成员变量中
         }
 
         /// <summary>
@@ -152,20 +169,28 @@ namespace CardSearcher
             return new List<Race>();
         }
 
+        public IEnumerable<HearthDb.Card> GetBaconCards() // 提供访问方法
+        {
+            return baconCards;
+        }
+
         [STAThread]
         static void Main()
         {
+            // 启动控制台
+            Console.WriteLine("Console start");
+
             Application app = new Application();
 
             SearchWindow sw = new SearchWindow();
             CardSearcher cs = new CardSearcher();
-            //sw.Show();
-            //app.Run();
+            sw.Show();
+            app.Run();
 
 
             // get AvailableRaces    
-            cs.GetAvailableRaces();
-            // get Tag
+            //cs.GetAvailableRaces();
+            //// get Tag
             var overrides = new Dictionary<int, Tuple<GameTag, int>>();
             Func<HearthDb.Card, GameTag, int> getTag = (HearthDb.Card card, GameTag tag) =>
             {
@@ -177,32 +202,33 @@ namespace CardSearcher
             var baconCards = Cards.All.Values
                 .Where(x =>
                     getTag(x, GameTag.TECH_LEVEL) > 0
-                    && getTag(x, GameTag.IS_BACON_POOL_MINION) > 0
+                    && (getTag(x, GameTag.IS_BACON_POOL_MINION) > 0 || getTag(x, GameTag.IS_BACON_POOL_SPELL) > 0)
                 );
-            
-            // Get value from baconCards where cardId is BGS_081
-            var baconCard = baconCards.FirstOrDefault(x => x.Id == "BGS_081");
 
-            //var card = Database.GetCardFromId("BG26_147");
-            var hdt_card = Database.GetCardFromId("BGS_081");
+            //// Get value from baconCards where cardId is BGS_081
+            //var baconCard = baconCards.FirstOrDefault(x => x.Id == "BGS_081");
 
-            const string cardId = "BGS_081";
-            //var url = $"https://static.zerotoheroes.com/hearthstone/cardart/256x/{cardId}.jpg";
-            //var client = new WebClient();
-            //client.DownloadFile(url, "ori_image.jpg");
+            ////var card = Database.GetCardFromId("BG26_147");
+            //var hdt_card = Database.GetCardFromId("BGS_081");
 
-            //// Get LocName
-            HearthDb.Card dbCard;
-            Cards.All.TryGetValue(cardId, out dbCard);
-            var name = dbCard.GetLocName(Locale.zhCN);
+            //const string cardId = "BGS_081";
+            ////var url = $"https://static.zerotoheroes.com/hearthstone/cardart/256x/{cardId}.jpg";
+            ////var client = new WebClient();
+            ////client.DownloadFile(url, "ori_image.jpg");
 
-            var filteredList = Cards.All.Where(kvp => kvp.Key.Contains(cardId)).ToList();
-            Log.Info("done");
+            ////// Get LocName
+            //HearthDb.Card dbCard;
+            //Cards.All.TryGetValue(cardId, out dbCard);
+            //var name = dbCard.GetLocName(Locale.zhCN);
 
-            // get all card which method GetLocText result not null and contains "Gold"
-            var goldCards = Cards.All.Where(kvp => kvp.Value.GetLocText(Locale.enUS) != null && kvp.Value.GetLocText(Locale.enUS).Contains("Gold")).ToList();
+            //var filteredList = Cards.All.Where(kvp => kvp.Key.Contains(cardId)).ToList();
+            //Log.Info("done");
 
-            Log.Info($"goldCards: {goldCards.Count}");
+            //// get all card which method GetLocText result not null and contains "Gold"
+            //var goldCards = Cards.All.Where(kvp => kvp.Value.GetLocText(Locale.enUS) != null && kvp.Value.GetLocText(Locale.enUS).Contains("Gold")).ToList();
+
+            //Log.Info($"goldCards: {goldCards.Count}");
+            Console.WriteLine("test");
         }
     }
 
