@@ -190,13 +190,13 @@ namespace CardSearcher
             sw.Show();
 
             // 创建 CardSearcher 实例并调用 Run 方法
-            var cardSearcher = new CardSearcher();
-            Task.Run(async () => await cardSearcher.Run()); // 使用 Task.Run 来处理异步调用
+            //var cardSearcher = new CardSearcher();
+            //Task.Run(async () => await cardSearcher.Run()); // 使用 Task.Run 来处理异步调用
 
             app.Run(); // 启动应用程序
         }
 
-        public async Task<List<CardData>> DownloadAndParseJsonAsync()
+        public async Task<List<CardWikiData>> DownloadAndParseJsonAsync()
         {
             const string url = "https://hearthstone.wiki.gg/wiki/Special:CargoExport?tables=Card%2C+CardTag%2C+DerivedCard%2C+CustomCard%2C+CardTagBg&join+on=Card.dbfId%3DCardTag.dbfId%2C+CardTag.dbfId%3DDerivedCard.dbfId%2C+DerivedCard.dbfId%3DCustomCard.dbfId%2C+CustomCard.dbfId%3DCardTagBg.dbfId&fields=CONCAT(Card.dbfId)%3DdbfId%2C+Card.id%3Did%2C+CONCAT(Card.name)%3Dname%2C+CardTag.keywords%3Dkeywords%2C+CardTag.refs%3Drefs%2C+CardTag.stringTags%3DstringTags%2C+CONCAT(CustomCard.mechanicTags__full)%3DwikiMechanics%2C+CONCAT(CustomCard.refTags__full)%3DwikiTags%2C+CONCAT(CustomCard.hiddenTags__full)%3DwikiHiddenTags&where=CardTagBg.isPoolMinion%3D1&limit=2000&format=json";
             //const string url = "https://www.baidu.com/";
@@ -214,7 +214,7 @@ namespace CardSearcher
                 {
                     var json = await client.GetStringAsync(url);
                     // 解析 JSON 数据
-                    var cardDataList = JsonConvert.DeserializeObject<List<CardData>>(json);
+                    var cardDataList = JsonConvert.DeserializeObject<List<CardWikiData>>(json);
 
                     foreach (var card in cardDataList)
                     {
@@ -228,13 +228,13 @@ namespace CardSearcher
 
                         // 处理 wikiMechanics 字段
                         card.wikiMechanicsList = CleanWikiTags(card.wikiMechanics);
-                        // 处理 wikiTags 字段
-                        card.wikiTagsList = CleanWikiTags(card.wikiTags);
-                        // 处理 keywords 字段
-                        card.KeywordsList = card.keywords?.Split(' ').ToList(); // 将 keywords 转换为 List<string>
+                        // 处理 wikiTags 字段 should split by "&amp;&amp;"
+                        card.wikiTagsList = card.wikiTags?.Split(new[] { "&amp;&amp;" }, StringSplitOptions.None).ToList();
+                        // 处理 keywords 字段 and make it lower case
+                        card.KeywordsList = card.keywords?.ToLower().Split(' ').ToList(); // 将 keywords 转换为 List<string>
                     }
 
-                    return cardDataList; // 返回包含关键字的 CardData 列表
+                    return cardDataList; // 返回包含关键字的 CardWikiData 列表
                 }
                 catch (HttpRequestException e)
                 {
@@ -248,7 +248,7 @@ namespace CardSearcher
                 }
             }
 
-            return new List<CardData>(); // 返回空列表
+            return new List<CardWikiData>(); // 返回空列表
         }
 
         private List<string> CleanWikiTags(string tags)
@@ -263,7 +263,7 @@ namespace CardSearcher
             return cleanedTags.Select(tag => tag.Trim()).ToList(); // 返回清理后的 List<string>
         }
 
-        public class CardData
+        public class CardWikiData
         {
             public string dbfId { get; set; }
             public string id { get; set; }
@@ -281,9 +281,12 @@ namespace CardSearcher
             public List<string> wikiHiddenTagsList { get; set; } // 新增 wikiHiddenTagsList 属性
         }
 
+        public List<CardWikiData> CardDataList { get; private set; } // 公共属性，供其他文件访问
+
         public async Task Run()
         {
-            var cardDataList = await DownloadAndParseJsonAsync(); // 确保在实例方法中调用
+            CardDataList = await DownloadAndParseJsonAsync(); // 确保在实例方法中调用
+            Console.WriteLine("wiki data done");
         }
     }
 

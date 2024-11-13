@@ -36,6 +36,7 @@ namespace CardSearcher
             cardResults = new ObservableCollection<CardResult>();
             ResultsListView.ItemsSource = cardResults;
             cardSearcher = new CardSearcher();
+            Task.Run(async () => await cardSearcher.Run()); // 使用 Task.Run 来处理异步调用
         }
 
         // async method 
@@ -48,6 +49,7 @@ namespace CardSearcher
                 var resultList = await Task.Run(() => cardSearcher.GetBaconCards()
                     .Where(kvp => kvp.Id.ToLower().Contains(cardId.ToLower()))
                     .ToList());
+                var cardDataList = cardSearcher.CardDataList;
                 // 输出结果数量到控制台
                 Console.WriteLine($"resultList.count: {resultList.Count}");
 
@@ -57,9 +59,17 @@ namespace CardSearcher
                 // 遍历结果并下载图片
                 foreach (var tmpCard in resultList)
                 {
+                    Console.WriteLine($"tmpCard.Id: {tmpCard.Id}");
                     var image = await GetCardImageAsync(tmpCard.Id); // 获取卡片图片
-                    cardResults.Add(new CardResult { ImageSource = image, DisplayText = tmpCard.GetLocName(Locale.zhCN) }); // 添加到集合
-                    // save image to ttt.jpg
+                    // wikitags if wikiTagsList is null, create a new list
+                    var tags = cardDataList.Find(card => card.id == tmpCard.Id).wikiTagsList ?? new List<string>();
+                    // add keywordsList if keywordsList is not null
+                    var keywords = cardDataList.Find(card => card.id == tmpCard.Id).KeywordsList;
+                    if (keywords != null)
+                    {
+                        tags.AddRange(keywords);
+                    }
+                    cardResults.Add(new CardResult { ImageSource = image, DisplayText = tmpCard.GetLocName(Locale.zhCN), Tags = tags }); // 添加到集合
                 }
             }
         }
@@ -113,5 +123,8 @@ namespace CardSearcher
     {
         public BitmapImage ImageSource { get; set; }
         public string DisplayText { get; set; }
+
+        // 用于存储标签的列表
+        public List<string> Tags { get; set; } = new List<string>(); // 初始化为一个空列表
     }
 }
