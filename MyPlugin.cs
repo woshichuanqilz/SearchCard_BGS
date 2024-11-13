@@ -19,6 +19,7 @@ using HearthDb;
 using HearthDb.Enums;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace CardSearcher
 {
@@ -41,16 +42,21 @@ namespace CardSearcher
         /// </summary>
         public PlugInDisplayControl stackPanel;
 
+        // 添加一个 List<Race> 变量来保存可用种族
+        private List<Race> AvailableRaces { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="CardSearcher"/> class.
         /// </summary>
         public CardSearcher()
         {
             // We are adding the Panel here for simplicity.  It would be better to add it under InitLogic()
-            InitViewPanel();
+            // InitViewPanel();
 
-            GameEvents.OnGameStart.Add(GameTypeCheck);
-            GameEvents.OnGameEnd.Add(CleanUp);
+            // GameEvents.OnGameStart.Add(GameTypeCheck);
+            // GameEvents.OnGameEnd.Add(CleanUp);
+
+            AvailableRaces = new List<Race>(); // 初始化可用种族列表
         }
 
         /// <summary>
@@ -109,15 +115,56 @@ namespace CardSearcher
             inputMoveManager.Dispose();
         }
 
+
+        public BitmapImage GetCardImage(string cardId)
+        {
+            // 如果image文件夹不存在，则创建
+            if (!Directory.Exists("image"))
+            {
+                Directory.CreateDirectory("image");
+            }
+
+            string imagePath = Path.Combine("image", $"{cardId}.jpg");
+
+            // 检查文件是否存在
+            if (File.Exists(imagePath))
+            {
+                return new BitmapImage(new Uri(imagePath, UriKind.Relative));
+            }
+            else
+            {
+                // 下载图片并保存
+                var url = $"https://static.zerotoheroes.com/hearthstone/cardart/256x/{cardId}.jpg";
+                using (var client = new WebClient())
+                {
+                    client.DownloadFile(url, imagePath);
+                }
+                return new BitmapImage(new Uri(imagePath, UriKind.Relative));
+            }
+        }
+
+        // 函数来获取可用种族
+        public List<Race> GetAvailableRaces()
+        {
+            if(Core.Game.CurrentGameStats?.GameId != null){
+                return BattlegroundsUtils.GetAvailableRaces(Core.Game.CurrentGameStats?.GameId).ToList();
+            }
+            return new List<Race>();
+        }
+
         [STAThread]
         static void Main()
         {
             Application app = new Application();
 
             SearchWindow sw = new SearchWindow();
+            CardSearcher cs = new CardSearcher();
             //sw.Show();
             //app.Run();
 
+
+            // get AvailableRaces    
+            cs.GetAvailableRaces();
             // get Tag
             var overrides = new Dictionary<int, Tuple<GameTag, int>>();
             Func<HearthDb.Card, GameTag, int> getTag = (HearthDb.Card card, GameTag tag) =>
@@ -154,34 +201,9 @@ namespace CardSearcher
 
             // get all card which method GetLocText result not null and contains "Gold"
             var goldCards = Cards.All.Where(kvp => kvp.Value.GetLocText(Locale.enUS) != null && kvp.Value.GetLocText(Locale.enUS).Contains("Gold")).ToList();
+
             Log.Info($"goldCards: {goldCards.Count}");
         }
-
-        public BitmapImage GetCardImage(string cardId)
-        {
-            // 如果image文件夹不存在，则创建
-            if (!Directory.Exists("image"))
-            {
-                Directory.CreateDirectory("image");
-            }
-
-            string imagePath = Path.Combine("image", $"{cardId}.jpg");
-
-            // 检查文件是否存在
-            if (File.Exists(imagePath))
-            {
-                return new BitmapImage(new Uri(imagePath, UriKind.Relative));
-            }
-            else
-            {
-                // 下载图片并保存
-                var url = $"https://static.zerotoheroes.com/hearthstone/cardart/256x/{cardId}.jpg";
-                using (var client = new WebClient())
-                {
-                    client.DownloadFile(url, imagePath);
-                }
-                return new BitmapImage(new Uri(imagePath, UriKind.Relative));
-            }
-        }
     }
+
 }
