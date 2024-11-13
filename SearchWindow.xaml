@@ -5,7 +5,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
         xmlns:local="clr-namespace:CardSearcher"
         mc:Ignorable="d" 
-        Title="Card Searcher" Height="450" Width="800">
+        Title="Card Searcher" Height="450" Width="800"
+        FontFamily="OriFont2"
+        >
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="0.14*" />
@@ -17,6 +19,12 @@
 
         <!-- ListView for Search Results -->
         <ListView x:Name="ResultsListView" Grid.Row="1" Margin="10" ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="Background" Value="#7FDBFF" />
+                    <Setter Property="Margin" Value="0,2" />
+                </Style>
+            </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
@@ -33,7 +41,9 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                            <TextBlock Text="{Binding}" Margin="5" Background="LightGray" Padding="5" />
+                                        <Border Background="Orange" CornerRadius="10" Margin="5">
+                                            <TextBlock Text="{Binding}" Padding="5" />
+                                        </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
