@@ -220,16 +220,16 @@ namespace CardSearcher
                     {
                         if (!string.IsNullOrEmpty(card.stringTags))
                         {
-                            card.Keywords = card.stringTags.Split(' ')
+                            card.TagsList = card.stringTags.Split(' ')
                                 .Select(tag => tag.Split('=')[0]) // 取每个 tag 的左侧部分
                                 .Distinct() // 去重
                                 .ToList(); // 转换为 List<string>
                         }
 
                         // 处理 wikiMechanics 字段
-                        card.wikiMechanics = CleanWikiTags(card.wikiMechanics);
+                        card.wikiMechanicsList = CleanWikiTags(card.wikiMechanics);
                         // 处理 wikiTags 字段
-                        card.wikiTags = CleanWikiTags(card.wikiTags);
+                        card.wikiTagsList = CleanWikiTags(card.wikiTags);
                         // 处理 keywords 字段
                         card.KeywordsList = card.keywords?.Split(' ').ToList(); // 将 keywords 转换为 List<string>
                     }
@@ -251,13 +251,16 @@ namespace CardSearcher
             return new List<CardData>(); // 返回空列表
         }
 
-        private string CleanWikiTags(string tags)
+        private List<string> CleanWikiTags(string tags)
         {
             if (string.IsNullOrEmpty(tags))
-                return tags;
+            {
+                return new List<string>(); // 返回空列表
+            }
 
-            // 移除 &amp; 和 ;
-            return tags.Replace("&amp;", "").Replace(";", "");
+            // 根据空格分割字符串并返回 List<string>
+            var cleanedTags = tags.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            return cleanedTags.Select(tag => tag.Trim()).ToList(); // 返回清理后的 List<string>
         }
 
         public class CardData
@@ -269,10 +272,13 @@ namespace CardSearcher
             public List<string> KeywordsList { get; set; } // 新增 KeywordsList 属性
             public string refs { get; set; }
             public string stringTags { get; set; }
-            public List<string> Keywords { get; set; } // 新增 Keywords 属性
+            public List<string> TagsList { get; set; } // 新增 TagsList 属性
             public string wikiMechanics { get; set; } // wikiMechanics 属性
+            public List<string> wikiMechanicsList { get; set; } // 新增 wikiMechanicsList 属性
             public string wikiTags { get; set; } // wikiTags 属性
-            public string wikiHiddenTags { get; set; }
+            public List<string> wikiTagsList { get; set; } // 新增 wikiTagsList 属性
+            public string wikiHiddenTags { get; set; } // 原始 wikiHiddenTags 属性
+            public List<string> wikiHiddenTagsList { get; set; } // 新增 wikiHiddenTagsList 属性
         }
 
         public async Task Run()
