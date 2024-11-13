@@ -16,6 +16,7 @@ using System.Windows.Shapes;
 using System.IO;
 using System.Net.Http;
 using System.Collections.ObjectModel;
+using HearthDb.Enums;
 
 namespace CardSearcher
 {
@@ -57,7 +58,7 @@ namespace CardSearcher
                 foreach (var tmpCard in resultList)
                 {
                     var image = await GetCardImageAsync(tmpCard.Id); // 获取卡片图片
-                    cardResults.Add(new CardResult { ImageSource = image, DisplayText = tmpCard.Id }); // 添加到集合
+                    cardResults.Add(new CardResult { ImageSource = image, DisplayText = tmpCard.GetLocName(Locale.zhCN) }); // 添加到集合
                     // save image to ttt.jpg
                 }
             }

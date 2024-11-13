@@ -20,6 +20,9 @@ using HearthDb.Enums;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Net.Http;
+using Newtonsoft.Json; // 确保你已经安装了 Newtonsoft.Json 包
+using System.Threading.Tasks;
 
 namespace CardSearcher
 {
@@ -182,53 +185,99 @@ namespace CardSearcher
 
             Application app = new Application();
 
+            // 创建并显示 SearchWindow
             SearchWindow sw = new SearchWindow();
-            CardSearcher cs = new CardSearcher();
             sw.Show();
-            app.Run();
 
+            // 创建 CardSearcher 实例并调用 Run 方法
+            var cardSearcher = new CardSearcher();
+            Task.Run(async () => await cardSearcher.Run()); // 使用 Task.Run 来处理异步调用
 
-            // get AvailableRaces    
-            //cs.GetAvailableRaces();
-            //// get Tag
-            var overrides = new Dictionary<int, Tuple<GameTag, int>>();
-            Func<HearthDb.Card, GameTag, int> getTag = (HearthDb.Card card, GameTag tag) =>
+            app.Run(); // 启动应用程序
+        }
+
+        public async Task<List<CardData>> DownloadAndParseJsonAsync()
+        {
+            const string url = "https://hearthstone.wiki.gg/wiki/Special:CargoExport?tables=Card%2C+CardTag%2C+DerivedCard%2C+CustomCard%2C+CardTagBg&join+on=Card.dbfId%3DCardTag.dbfId%2C+CardTag.dbfId%3DDerivedCard.dbfId%2C+DerivedCard.dbfId%3DCustomCard.dbfId%2C+CustomCard.dbfId%3DCardTagBg.dbfId&fields=CONCAT(Card.dbfId)%3DdbfId%2C+Card.id%3Did%2C+CONCAT(Card.name)%3Dname%2C+CardTag.keywords%3Dkeywords%2C+CardTag.refs%3Drefs%2C+CardTag.stringTags%3DstringTags%2C+CONCAT(CustomCard.mechanicTags__full)%3DwikiMechanics%2C+CONCAT(CustomCard.refTags__full)%3DwikiTags%2C+CONCAT(CustomCard.hiddenTags__full)%3DwikiHiddenTags&where=CardTagBg.isPoolMinion%3D1&limit=2000&format=json";
+            //const string url = "https://www.baidu.com/";
+
+            var handler = new HttpClientHandler()
             {
-                if (overrides.TryGetValue(card.DbfId, out var tagOverride) && tagOverride.Item1 == tag)
-                    return tagOverride.Item2;
-                return card.Entity.GetTag(tag);
+                Proxy = new WebProxy("http://127.0.0.1:10081"),
+                UseProxy = true
             };
 
-            var baconCards = Cards.All.Values
-                .Where(x =>
-                    getTag(x, GameTag.TECH_LEVEL) > 0
-                    && (getTag(x, GameTag.IS_BACON_POOL_MINION) > 0 || getTag(x, GameTag.IS_BACON_POOL_SPELL) > 0)
-                );
+            using (HttpClient client = new HttpClient(handler))
+            {
+                // 下载 JSON 数据
+                try
+                {
+                    var json = await client.GetStringAsync(url);
+                    // 解析 JSON 数据
+                    var cardDataList = JsonConvert.DeserializeObject<List<CardData>>(json);
 
-            //// Get value from baconCards where cardId is BGS_081
-            //var baconCard = baconCards.FirstOrDefault(x => x.Id == "BGS_081");
+                    foreach (var card in cardDataList)
+                    {
+                        if (!string.IsNullOrEmpty(card.stringTags))
+                        {
+                            card.Keywords = card.stringTags.Split(' ')
+                                .Select(tag => tag.Split('=')[0]) // 取每个 tag 的左侧部分
+                                .Distinct() // 去重
+                                .ToList(); // 转换为 List<string>
+                        }
 
-            ////var card = Database.GetCardFromId("BG26_147");
-            //var hdt_card = Database.GetCardFromId("BGS_081");
+                        // 处理 wikiMechanics 字段
+                        card.wikiMechanics = CleanWikiTags(card.wikiMechanics);
+                        // 处理 wikiTags 字段
+                        card.wikiTags = CleanWikiTags(card.wikiTags);
+                        // 处理 keywords 字段
+                        card.KeywordsList = card.keywords?.Split(' ').ToList(); // 将 keywords 转换为 List<string>
+                    }
 
-            //const string cardId = "BGS_081";
-            ////var url = $"https://static.zerotoheroes.com/hearthstone/cardart/256x/{cardId}.jpg";
-            ////var client = new WebClient();
-            ////client.DownloadFile(url, "ori_image.jpg");
+                    return cardDataList; // 返回包含关键字的 CardData 列表
+                }
+                catch (HttpRequestException e)
+                {
+                    // 处理请求异常
+                    Console.WriteLine($"请求失败: {e.Message}");
+                }
+                catch (Exception e)
+                {
+                    // 处理其他异常
+                    Console.WriteLine($"发生错误: {e.Message}");
+                }
+            }
 
-            ////// Get LocName
-            //HearthDb.Card dbCard;
-            //Cards.All.TryGetValue(cardId, out dbCard);
-            //var name = dbCard.GetLocName(Locale.zhCN);
+            return new List<CardData>(); // 返回空列表
+        }
 
-            //var filteredList = Cards.All.Where(kvp => kvp.Key.Contains(cardId)).ToList();
-            //Log.Info("done");
+        private string CleanWikiTags(string tags)
+        {
+            if (string.IsNullOrEmpty(tags))
+                return tags;
 
-            //// get all card which method GetLocText result not null and contains "Gold"
-            //var goldCards = Cards.All.Where(kvp => kvp.Value.GetLocText(Locale.enUS) != null && kvp.Value.GetLocText(Locale.enUS).Contains("Gold")).ToList();
+            // 移除 &amp; 和 ;
+            return tags.Replace("&amp;", "").Replace(";", "");
+        }
 
-            //Log.Info($"goldCards: {goldCards.Count}");
-            Console.WriteLine("test");
+        public class CardData
+        {
+            public string dbfId { get; set; }
+            public string id { get; set; }
+            public string name { get; set; }
+            public string keywords { get; set; } // 原始 keywords 字段
+            public List<string> KeywordsList { get; set; } // 新增 KeywordsList 属性
+            public string refs { get; set; }
+            public string stringTags { get; set; }
+            public List<string> Keywords { get; set; } // 新增 Keywords 属性
+            public string wikiMechanics { get; set; } // wikiMechanics 属性
+            public string wikiTags { get; set; } // wikiTags 属性
+            public string wikiHiddenTags { get; set; }
+        }
+
+        public async Task Run()
+        {
+            var cardDataList = await DownloadAndParseJsonAsync(); // 确保在实例方法中调用
         }
     }
 
