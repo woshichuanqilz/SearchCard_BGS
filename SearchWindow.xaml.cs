@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -26,6 +27,7 @@ namespace CardSearcher
         private string _name;
         private SolidColorBrush _color;
         private SolidColorBrush _foreColor;
+        public string ItemType { get; set; }
 
         public string Name
         {
@@ -83,6 +85,10 @@ namespace CardSearcher
             ResultsListView.ItemsSource = cardResults;
             SearchFilterItems = new ObservableCollection<SearchItem>();
             SearchFilter.ItemsSource = SearchFilterItems;
+
+            // 订阅 CollectionChanged 事件
+            SearchFilterItems.CollectionChanged += SearchFilterItems_CollectionChanged;
+
             cardSearcher = new CardSearcher();
             Task.Run(async () => await cardSearcher.Run()); // 使用 Task.Run 来处理异步调用
         }
@@ -283,6 +289,7 @@ namespace CardSearcher
                         Name = clickedItem.ToString(),
                         Color = Brushes.Blue,
                         ForeColor = Brushes.White,
+                        ItemType = "Race",
                     }
                 );
             }
@@ -299,6 +306,7 @@ namespace CardSearcher
                         Name = clickedItem.ToString(),
                         Color = Brushes.Orange,
                         ForeColor = Brushes.Black,
+                        ItemType = "Tag",
                     }
                 );
             }
@@ -309,23 +317,17 @@ namespace CardSearcher
             // 假设 clickedItem 是 SearchItem 类型
             if (clickedItem is SearchItem item)
             {
-                // 创建新的 SearchItem 并设置颜色为橙色
+                // 创建新的 SearchItem 并设置颜色和类型
                 var newItem = new SearchItem
                 {
                     Name = item.Name, // 设置名称
                     Color = item.Color,
                     ForeColor = item.ForeColor,
+                    ItemType = item.ItemType // 设置类型为 tags 或 races
                 };
 
-                // 将新项添加到 SearchFilterItems
                 // 检查 SearchFilterItems 中是否已经存在该项
-                if (
-                    !SearchFilterItems.Any(i =>
-                        i.Name == newItem.Name
-                        && i.Color == newItem.Color
-                        && i.ForeColor == newItem.ForeColor
-                    )
-                )
+                if (!SearchFilterItems.Any(i => i.Name == newItem.Name && i.ItemType == newItem.ItemType))
                 {
                     // 将新项添加到 SearchFilterItems
                     SearchFilterItems.Add(newItem);
@@ -357,8 +359,55 @@ namespace CardSearcher
             public string DisplayText { get; set; }
 
             // 用于存储标签的列表
-            public List<string> Tags { get; set; } = new List<string>(); // 初始化为一个空列表
+            public List<string> Tags { get; set; } = new List<string>(); // 初始化一个空列表
             public List<string> Races { get; set; } = new List<string>(); // 初始化为一个空列表
+        }
+
+        private async void SearchFilterItems_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            // 清空之前的结果
+            cardResults.Clear();
+
+            // 提取所有标签
+            var tags = SearchFilterItems
+                .Where(item => item.ItemType == "Tag") // 只提取标签
+                .Select(item => item.Name)
+                .ToList();
+
+            // 需要把种族也提取出来
+            var races = SearchFilterItems
+                .Where(item => item.ItemType == "Race") // 只提取种族
+                .Select(item => item.Name)
+                .ToList();
+            await SearchByTags(tags, races);
+        }
+
+        private async Task SearchByTags(List<string> tags, List<string> races)
+        {
+            // 清空之前的结果
+            cardResults.Clear();
+
+            // 根据标签进行搜索的逻辑
+            // 这里假设您有一个方法可以根据标签获取卡片
+            var resultList = await cardSearcher.GetCardsByTagsAndRaces(tags, races);
+
+
+            // 遍历结果并下载图片
+            foreach (var tmpCard in resultList)
+            {
+                var image = await GetCardImageAsync(tmpCard.id); // 获取卡片图片
+                var dbCard = cardSearcher.GetBaconCards().Where(card => card.Id == tmpCard.id).FirstOrDefault();
+                cardResults.Add(
+                    new CardResult
+                    {
+                        ImageSource = image,
+                        DisplayText = dbCard.GetLocName(Locale.zhCN),
+                        Tags = tmpCard.wikiTagsList,
+                        // 如果 RacesList 的第一个元素为空，则设置为 "Neutral"
+                        Races = tmpCard.RacesList
+                    }
+                ); // 添加到集合
+            }
         }
     }
 }

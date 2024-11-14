@@ -50,6 +50,8 @@ namespace CardSearcher
 
         private IEnumerable<HearthDb.Card> baconCards; // 添加成员变量
 
+        private List<CardWikiData> cardDataList; // 添加成员变量
+
         /// <summary>
         /// Initializes a new instance of the <see cref="CardSearcher"/> class.
         /// </summary>
@@ -166,7 +168,8 @@ namespace CardSearcher
         // 函数来获取可用种族
         public List<Race> GetAvailableRaces()
         {
-            if(Core.Game.CurrentGameStats?.GameId != null){
+            if (Core.Game.CurrentGameStats?.GameId != null)
+            {
                 return BattlegroundsUtils.GetAvailableRaces(Core.Game.CurrentGameStats?.GameId).ToList();
             }
             return new List<Race>();
@@ -213,8 +216,8 @@ namespace CardSearcher
                 try
                 {
                     var json = await client.GetStringAsync(url);
-                    // 解析 JSON 数据
-                    var cardDataList = JsonConvert.DeserializeObject<List<CardWikiData>>(json);
+                    // 解析 JSON 数据并赋值给成员变量
+                    cardDataList = JsonConvert.DeserializeObject<List<CardWikiData>>(json);
 
                     foreach (var card in cardDataList)
                     {
@@ -234,6 +237,11 @@ namespace CardSearcher
                         card.KeywordsList = card.keywords?.ToLower().Split(' ').ToList(); // 将 keywords 转换为 List<string>
                         // 处理 Races 字段 should split by "&amp;&amp;"
                         card.RacesList = card.Races[0]?.Split(new[] { "&amp;&amp;" }, StringSplitOptions.None).ToList();
+                        // 如果 RacesList 的第一个元素为空，则设置为 "Neutral"
+                        if (card.RacesList.FirstOrDefault() == "")
+                        {
+                            card.RacesList = new List<string> { "Neutral" };
+                        }
                     }
 
                     return cardDataList; // 返回包含关键字的 CardWikiData 列表
@@ -251,6 +259,17 @@ namespace CardSearcher
             }
 
             return new List<CardWikiData>(); // 返回空列表
+        }
+
+        // GetCardsByTagsAndRaces
+        public async Task<List<CardWikiData>> GetCardsByTagsAndRaces(List<string> tags, List<string> races)
+        {
+            // 根据 tags 和 races 进行搜索 需要搜索包含所有 tags 和 races 的卡片, wikiTagsList 和 RacesList 都是 List<string> and not null 
+            var resultList = cardDataList.Where(card =>
+                (card.wikiTagsList != null && tags.All(tag => card.wikiTagsList.Contains(tag))) &&
+                (card.RacesList != null && races.All(race => (card.RacesList.Contains(race) || card.RacesList.Contains("All"))))
+            ).ToList();
+            return resultList;
         }
 
         private List<string> CleanWikiTags(string tags)
