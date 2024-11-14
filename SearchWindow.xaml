@@ -10,7 +10,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="0.14*" />
-            <RowDefinition Height="0.5*" />
+            <RowDefinition Height="0.1*" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -28,10 +28,10 @@
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal"> <!-- 使用 StackPanel 以水平排列 -->
-                        <Border Background="Blue" CornerRadius="10" Margin="5">
-                            <TextBlock Text="{Binding}" Foreground="Yellow" Padding="5" />
+                        <Border Background="Blue" CornerRadius="10" Margin="1">
+                            <TextBlock Text="{Binding}" Foreground="Yellow" Padding="3" />
                         </Border>
-                        <Button Width="20" Height="20" Margin="5" Click="CloseButton_Click"
+                        <Button Width="20" Height="20" Margin="1" Click="CloseButton_Click"
                             Tag="{Binding }"
                             Background="Gray" BorderThickness="0"
                             Padding="0">
