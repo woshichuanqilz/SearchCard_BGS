@@ -28,6 +28,7 @@ namespace CardSearcher
     {
         private static readonly HttpClient httpClient = new HttpClient();
         private ObservableCollection<CardResult> cardResults;
+        private ObservableCollection<string> SearchFilterItems;
         private CardSearcher cardSearcher;
 
         public SearchWindow()
@@ -36,6 +37,8 @@ namespace CardSearcher
             InputBox.TextChanged += InputBox_TextChanged;
             cardResults = new ObservableCollection<CardResult>();
             ResultsListView.ItemsSource = cardResults;
+            SearchFilterItems = new ObservableCollection<string>();
+            SearchFilter.ItemsSource = SearchFilterItems;
             cardSearcher = new CardSearcher();
             Task.Run(async () => await cardSearcher.Run()); // 使用 Task.Run 来处理异步调用
         }
@@ -192,13 +195,25 @@ namespace CardSearcher
             }
         }
 
-        private void Races_MouseDown(object sender, MouseButtonEventArgs e)
+        private void RaceItem_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (sender is ItemsControl itemsControl)
+            var clickedItem = (sender as Border)?.DataContext; // 获取被点击的项目
+            if (clickedItem != null)
             {
-                var clickedRace = (string)((FrameworkElement)e.OriginalSource).DataContext;
-                //ControlA.Text += clickedRace + " "; // 将点击的种族添加到控件A中
+                // 将点击的项目添加到 SearchFilter 中
+                AddItemToSearchFilter(clickedItem);
             }
+        }
+
+        private void AddItemToSearchFilter(object item)
+        {
+            // 假设你有一个 ObservableCollection<string> 用于存储 SearchFilter 中的项目
+            if (SearchFilterItems == null)
+            {
+                SearchFilterItems = new ObservableCollection<string>();
+            }
+
+            SearchFilterItems.Add(item.ToString()); // 将项目添加到集合中
         }
     }
 
