@@ -23,12 +23,38 @@
                 <Style TargetType="ListViewItem">
                     <Setter Property="Background" Value="#7FDBFF" />
                     <Setter Property="Margin" Value="0,2" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListViewItem">
+                                <Border Background="{TemplateBinding Background}" 
+                                        CornerRadius="10" 
+                                        Margin="{TemplateBinding Margin}">
+                                    <ContentPresenter />
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="Gray" BlurRadius="10" ShadowDepth="0" Opacity="0" />
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="Gray" BlurRadius="10" ShadowDepth="0" Opacity="0.5" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </Style.Triggers>
                 </Style>
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <Image Source="{Binding ImageSource}" Width="50" Height="50" Margin="0,0,10,0" />
+                        <Image Source="{Binding ImageSource}" Width="50" Height="50" Margin="0,0,10,0" 
+                               MouseEnter="Image_MouseEnter" MouseLeave="Image_MouseLeave" />
                         <TextBlock Text="{Binding DisplayText}" VerticalAlignment="Center" FontSize="14" />
                         
                         <!-- 用于放置标签的 StackPanel horizontal -->

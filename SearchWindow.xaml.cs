@@ -17,6 +17,7 @@ using System.IO;
 using System.Net.Http;
 using System.Collections.ObjectModel;
 using HearthDb.Enums;
+using System.Windows.Forms;
 
 namespace CardSearcher
 {
@@ -135,6 +136,48 @@ namespace CardSearcher
         {
             string input = InputBox.Text;
             // Perform search action with the input value
+        }
+
+        private void Image_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            var image = sender as Image;
+            if (image != null)
+            {
+                // 创建一个新的窗口来显示放大的图片
+                var popup = new Window
+                {
+                    Width = 200,
+                    Height = 200,
+                    WindowStyle = WindowStyle.None,
+                    AllowsTransparency = true,
+                    Background = Brushes.Transparent,
+                    Content = new Image
+                    {
+                        Source = image.Source,
+                        Stretch = Stretch.Uniform,
+                        Width = 200,
+                        Height = 200
+                    }
+                };
+
+                // 获取图片在屏幕上的位置
+                var position = image.PointToScreen(new Point(0, 0));
+                popup.Left = (position.X + (image.ActualWidth / 2) - (popup.Width / 2)) / 2 + 10;
+                popup.Top = (position.Y + image.ActualHeight)/2 + 35;
+
+                popup.Show();
+                image.Tag = popup; // 保存窗口引用
+            }
+        }
+
+        private void Image_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            var image = sender as Image;
+            if (image != null && image.Tag is Window popup)
+            {
+                popup.Close(); // 关闭放大窗口
+                image.Tag = null; // 清除引用
+            }
         }
     }
 
