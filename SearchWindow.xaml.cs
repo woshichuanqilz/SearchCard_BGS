@@ -42,13 +42,25 @@ namespace CardSearcher
         // async method 
         private async void InputBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            string cardId = InputBox.Text;
-            if (cardId.Length >= 3)
+            string tmp_Id = InputBox.Text;
+            if (tmp_Id.Length >= 3)
             {
                 // 获取匹配的卡片
-                var resultList = await Task.Run(() => cardSearcher.GetBaconCards()
-                    .Where(kvp => kvp.Id.ToLower().Contains(cardId.ToLower()))
-                    .ToList());
+                var resultList = new List<Card>();
+                bool is_bg = tmp_Id.StartsWith("bg");
+                bool is_number = tmp_Id.All(char.IsDigit);
+                // tmp_Id is start with "bg" 
+                if (is_bg){
+                    resultList = await Task.Run(() => cardSearcher.GetBaconCards()
+                        .Where(kvp => kvp.Id.ToLower().Contains(tmp_Id.ToLower()))
+                        .ToList());
+                }
+                // tmp_Id is number
+                else if (is_number){
+                    resultList = await Task.Run(() => cardSearcher.GetBaconCards()
+                        .Where(kvp => kvp.DbfId.ToString().Contains(tmp_Id))
+                        .ToList());
+                }
                 var cardDataList = cardSearcher.CardDataList;
                 // 输出结果数量到控制台
                 Console.WriteLine($"resultList.count: {resultList.Count}");
@@ -61,10 +73,18 @@ namespace CardSearcher
                 {
                     Console.WriteLine($"tmpCard.Id: {tmpCard.Id}");
                     var image = await GetCardImageAsync(tmpCard.Id); // 获取卡片图片
-                    // wikitags if wikiTagsList is null, create a new list
-                    var tags = cardDataList.Find(card => card.id == tmpCard.Id).wikiTagsList ?? new List<string>();
-                    // add keywordsList if keywordsList is not null
-                    var keywords = cardDataList.Find(card => card.id == tmpCard.Id).KeywordsList;
+                    var tags = new List<string>();
+                    var keywords = new List<string>();
+                    if (is_bg){
+                        // wikitags if wikiTagsList is null, create a new list
+                        tags = cardDataList.Find(card => card.id == tmpCard.Id).wikiTagsList ?? new List<string>();
+                        // add keywordsList if keywordsList is not null
+                        keywords = cardDataList.Find(card => card.id == tmpCard.Id).KeywordsList;
+                    }
+                    else if (is_number){
+                        tags = cardDataList.Find(card => card.dbfId == tmpCard.DbfId.ToString()).wikiTagsList ?? new List<string>();
+                        keywords = cardDataList.Find(card => card.dbfId == tmpCard.DbfId.ToString()).KeywordsList;
+                    }
                     if (keywords != null)
                     {
                         tags.AddRange(keywords);
