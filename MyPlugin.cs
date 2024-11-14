@@ -45,9 +45,6 @@ namespace CardSearcher
         /// </summary>
         public PlugInDisplayControl stackPanel;
 
-        // 添加一个 List<Race> 变量来保存可用种族
-        private List<Race> AvailableRaces { get; set; }
-
         private IEnumerable<HearthDb.Card> baconCards; // 添加成员变量
 
         private List<CardWikiData> cardDataList; // 添加成员变量
@@ -57,79 +54,28 @@ namespace CardSearcher
         /// </summary>
         public CardSearcher()
         {
-            // We are adding the Panel here for simplicity.  It would be better to add it under InitLogic()
-            // InitViewPanel();
-
-            // GameEvents.OnGameStart.Add(GameTypeCheck);
-            // GameEvents.OnGameEnd.Add(CleanUp);
-
-            AvailableRaces = new List<Race>(); // 初始化可用种族列表
-
             var overrides = new Dictionary<int, Tuple<GameTag, int>>();
-            Func<HearthDb.Card, GameTag, int> getTag = (HearthDb.Card card, GameTag tag) =>
+            if (overrides == null) throw new ArgumentNullException(nameof(overrides));
+
+            int GetTag(HearthDb.Card card, GameTag tag)
             {
-                if (overrides.TryGetValue(card.DbfId, out var tagOverride) && tagOverride.Item1 == tag)
-                    return tagOverride.Item2;
+                if (overrides.TryGetValue(card.DbfId, out var tagOverride) && tagOverride.Item1 == tag) return tagOverride.Item2;
                 return card.Entity.GetTag(tag);
-            };
+            }
 
             baconCards = Cards.All.Values
                 .Where(x =>
-                    getTag(x, GameTag.TECH_LEVEL) > 0
-                    && getTag(x, GameTag.IS_BACON_POOL_MINION) > 0
-                    && getTag(x, GameTag.IS_BACON_POOL_MINION) > 0
+                    GetTag(x, GameTag.TECH_LEVEL) > 0
+                    && GetTag(x, GameTag.IS_BACON_POOL_MINION) > 0
+                    && GetTag(x, GameTag.IS_BACON_POOL_MINION) > 0
                 ).ToList(); // 将结果存储到成员变量中
-        }
-
-        /// <summary>
-        /// Check the game type to see if our Plug-in is used.
-        /// </summary>
-        private void GameTypeCheck()
-        {
-            // ToDo : Enable toggle Props
-            if (Core.Game.CurrentGameType == HearthDb.Enums.GameType.GT_RANKED ||
-                Core.Game.CurrentGameType == HearthDb.Enums.GameType.GT_CASUAL ||
-                Core.Game.CurrentGameType == HearthDb.Enums.GameType.GT_FSG_BRAWL ||
-                Core.Game.CurrentGameType == HearthDb.Enums.GameType.GT_ARENA)
-            {
-                InitLogic();
-            }
-        }
-
-        private void InitLogic()
-        {
-            // Here you can begin to work your Plug-in magic
-        }
-
-        private void InitViewPanel()
-        {
-            stackPanel = new PlugInDisplayControl();
-            stackPanel.Name = panelName;
-            stackPanel.Visibility = System.Windows.Visibility.Collapsed;
-            Core.OverlayCanvas.Children.Add(stackPanel);
-
-            Canvas.SetTop(stackPanel, Settings.Default.Top);
-            Canvas.SetLeft(stackPanel, Settings.Default.Left);
-
-            inputMoveManager = new InputMoveManager(stackPanel);
-
-            Settings.Default.PropertyChanged += SettingsChanged;
-            SettingsChanged(null, null);
-        }
-
-        private void SettingsChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            stackPanel.RenderTransform = new ScaleTransform(Settings.Default.Scale / 100, Settings.Default.Scale / 100);
-            stackPanel.Opacity = Settings.Default.Opacity / 100;
         }
 
         public void CleanUp()
         {
-            if (stackPanel != null)
-            {
-                Core.OverlayCanvas.Children.Remove(stackPanel);
-                Dispose();
-            }
+            if (stackPanel == null) return;
+            Core.OverlayCanvas.Children.Remove(stackPanel);
+            Dispose();
         }
 
         public void Dispose()
@@ -146,7 +92,7 @@ namespace CardSearcher
                 Directory.CreateDirectory("image");
             }
 
-            string imagePath = Path.Combine("image", $"{cardId}.jpg");
+            var imagePath = Path.Combine("image", $"{cardId}.jpg");
 
             // 检查文件是否存在
             if (File.Exists(imagePath))
@@ -168,11 +114,7 @@ namespace CardSearcher
         // 函数来获取可用种族
         public List<Race> GetAvailableRaces()
         {
-            if (Core.Game.CurrentGameStats?.GameId != null)
-            {
-                return BattlegroundsUtils.GetAvailableRaces(Core.Game.CurrentGameStats?.GameId).ToList();
-            }
-            return new List<Race>();
+            return Core.Game.CurrentGameStats?.GameId != null ? (BattlegroundsUtils.GetAvailableRaces(Core.Game.CurrentGameStats?.GameId) ?? new HashSet<Race>()).ToList() : new List<Race>();
         }
 
         public IEnumerable<HearthDb.Card> GetBaconCards() // 提供访问方法
@@ -183,19 +125,11 @@ namespace CardSearcher
         [STAThread]
         static void Main()
         {
-            // 启动控制台
-            Console.WriteLine("Console start");
-
-            Application app = new Application();
+            var app = new Application();
 
             // 创建并显示 SearchWindow
-            SearchWindow sw = new SearchWindow();
+            var sw = new SearchWindow();
             sw.Show();
-
-            // 创建 CardSearcher 实例并调用 Run 方法
-            //var cardSearcher = new CardSearcher();
-            //Task.Run(async () => await cardSearcher.Run()); // 使用 Task.Run 来处理异步调用
-
             app.Run(); // 启动应用程序
         }
 
@@ -210,7 +144,7 @@ namespace CardSearcher
                 UseProxy = true
             };
 
-            using (HttpClient client = new HttpClient(handler))
+            using (var client = new HttpClient(handler))
             {
                 // 下载 JSON 数据
                 try
@@ -221,24 +155,24 @@ namespace CardSearcher
 
                     foreach (var card in cardDataList)
                     {
-                        if (!string.IsNullOrEmpty(card.stringTags))
+                        if (!string.IsNullOrEmpty(card.StringTags))
                         {
-                            card.TagsList = card.stringTags.Split(' ')
+                            card.TagsList = card.StringTags.Split(' ')
                                 .Select(tag => tag.Split('=')[0]) // 取每个 tag 的左侧部分
                                 .Distinct() // 去重
                                 .ToList(); // 转换为 List<string>
                         }
 
                         // 处理 wikiMechanics 字段
-                        card.wikiMechanicsList = CleanWikiTags(card.wikiMechanics);
+                        card.WikiMechanicsList = CleanWikiTags(card.WikiMechanics);
                         // 处理 wikiTags 字段 should split by "&amp;&amp;"
-                        card.wikiTagsList = card.wikiTags?.Split(new[] { "&amp;&amp;" }, StringSplitOptions.None).ToList();
+                        card.WikiTagsList = card.WikiTags?.Split(new[] { "&amp;&amp;" }, StringSplitOptions.None).ToList();
                         // 处理 keywords 字段 and make it lower case
-                        card.KeywordsList = card.keywords?.ToLower().Split(' ').ToList(); // 将 keywords 转换为 List<string>
+                        card.KeywordsList = card.Keywords?.ToLower().Split(' ').ToList(); // 将 keywords 转换为 List<string>
                         // 处理 Races 字段 should split by "&amp;&amp;"
                         card.RacesList = card.Races[0]?.Split(new[] { "&amp;&amp;" }, StringSplitOptions.None).ToList();
                         // 如果 RacesList 的第一个元素为空，则设置为 "Neutral"
-                        if (card.RacesList.FirstOrDefault() == "")
+                        if (card.RacesList != null && card.RacesList.FirstOrDefault() == "")
                         {
                             card.RacesList = new List<string> { "Neutral" };
                         }
@@ -262,17 +196,17 @@ namespace CardSearcher
         }
 
         // GetCardsByTagsAndRaces
-        public async Task<List<CardWikiData>> GetCardsByTagsAndRaces(List<string> tags, List<string> races)
+        public Task<List<CardWikiData>> GetCardsByTagsAndRaces(List<string> tags, List<string> races)
         {
             // 根据 tags 和 races 进行搜索 需要搜索包含所有 tags 和 races 的卡片, wikiTagsList 和 RacesList 都是 List<string> and not null 
             var resultList = cardDataList.Where(card =>
-                (card.wikiTagsList != null && tags.All(tag => card.wikiTagsList.Contains(tag))) &&
+                (card.WikiTagsList != null && tags.All(tag => card.WikiTagsList.Contains(tag))) &&
                 (card.RacesList != null && races.All(race => (card.RacesList.Contains(race) || card.RacesList.Contains("All"))))
             ).ToList();
-            return resultList;
+            return Task.FromResult(resultList);
         }
 
-        private List<string> CleanWikiTags(string tags)
+        private static List<string> CleanWikiTags(string tags)
         {
             if (string.IsNullOrEmpty(tags))
             {
@@ -286,20 +220,19 @@ namespace CardSearcher
 
         public class CardWikiData
         {
-            public string dbfId { get; set; }
-            public string id { get; set; }
-            public string name { get; set; }
-            public string keywords { get; set; } // 原始 keywords 字段
+            public string DbfId { get; set; }
+            public string Id { get; set; }
+            public string Name { get; set; }
+            public string Keywords { get; set; } // 原始 keywords 字段
             public List<string> KeywordsList { get; set; } // 新增 KeywordsList 属性
-            public string refs { get; set; }
-            public string stringTags { get; set; }
+            public string StringTags { get; set; }
             public List<string> TagsList { get; set; } // 新增 TagsList 属性
-            public string wikiMechanics { get; set; } // wikiMechanics 属性
-            public List<string> wikiMechanicsList { get; set; } // 新增 wikiMechanicsList 属性
-            public string wikiTags { get; set; } // wikiTags 属性
-            public List<string> wikiTagsList { get; set; } // 新增 wikiTagsList 属性
-            public string wikiHiddenTags { get; set; } // 原始 wikiHiddenTags 属性
-            public List<string> wikiHiddenTagsList { get; set; } // 新增 wikiHiddenTagsList 属性
+            public string WikiMechanics { get; set; } // wikiMechanics 属性
+            public List<string> WikiMechanicsList { get; set; } // 新增 wikiMechanicsList 属性
+            public string WikiTags { get; set; } // wikiTags 属性
+            public List<string> WikiTagsList { get; set; } // 新增 wikiTagsList 属性
+            public string WikiHiddenTags { get; set; } // 原始 wikiHiddenTags 属性
+            public List<string> WikiHiddenTagsList { get; set; } // 新增 wikiHiddenTagsList 属性
             public List<string> Races { get; set; } // 新增 Races 属性
             public List<string> RacesList { get; set; } // 新增 Races 属性
         }
