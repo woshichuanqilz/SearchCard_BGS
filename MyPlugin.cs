@@ -198,8 +198,8 @@ namespace CardSearcher
 
         public async Task<List<CardWikiData>> DownloadAndParseJsonAsync()
         {
-            const string url = "https://hearthstone.wiki.gg/wiki/Special:CargoExport?tables=Card%2C+CardTag%2C+DerivedCard%2C+CustomCard%2C+CardTagBg&join+on=Card.dbfId%3DCardTag.dbfId%2C+CardTag.dbfId%3DDerivedCard.dbfId%2C+DerivedCard.dbfId%3DCustomCard.dbfId%2C+CustomCard.dbfId%3DCardTagBg.dbfId&fields=CONCAT(Card.dbfId)%3DdbfId%2C+Card.id%3Did%2C+CONCAT(Card.name)%3Dname%2C+CardTag.keywords%3Dkeywords%2C+CardTag.refs%3Drefs%2C+CardTag.stringTags%3DstringTags%2C+CONCAT(CustomCard.mechanicTags__full)%3DwikiMechanics%2C+CONCAT(CustomCard.refTags__full)%3DwikiTags%2C+CONCAT(CustomCard.hiddenTags__full)%3DwikiHiddenTags&where=CardTagBg.isPoolMinion%3D1&limit=2000&format=json";
-            //const string url = "https://www.baidu.com/";
+            const string url =
+                "https://hearthstone.wiki.gg/wiki/Special:CargoExport?tables=Card,%20CardTag,%20DerivedCard,%20CustomCard,%20CardTagBg&join%20on=Card.dbfId=CardTag.dbfId,%20CardTag.dbfId=DerivedCard.dbfId,%20DerivedCard.dbfId=CustomCard.dbfId,%20CustomCard.dbfId=CardTagBg.dbfId&fields=CONCAT(Card.dbfId)=dbfId,%20Card.id=id,%20CONCAT(Card.name)=name,%20DerivedCard.minionTypeStrings=Races,%20CardTag.keywords=keywords,%20CardTag.refs=refs,%20CardTag.stringTags=stringTags,%20CONCAT(CustomCard.mechanicTags__full)=wikiMechanics,%20CONCAT(CustomCard.refTags__full)=wikiTags,%20CONCAT(CustomCard.hiddenTags__full)=wikiHiddenTags&where=CardTagBg.isPoolMinion=1&limit=2000&format=json";
 
             var handler = new HttpClientHandler()
             {
@@ -232,6 +232,8 @@ namespace CardSearcher
                         card.wikiTagsList = card.wikiTags?.Split(new[] { "&amp;&amp;" }, StringSplitOptions.None).ToList();
                         // 处理 keywords 字段 and make it lower case
                         card.KeywordsList = card.keywords?.ToLower().Split(' ').ToList(); // 将 keywords 转换为 List<string>
+                        // 处理 Races 字段 should split by "&amp;&amp;"
+                        card.RacesList = card.Races[0]?.Split(new[] { "&amp;&amp;" }, StringSplitOptions.None).ToList();
                     }
 
                     return cardDataList; // 返回包含关键字的 CardWikiData 列表
@@ -279,6 +281,8 @@ namespace CardSearcher
             public List<string> wikiTagsList { get; set; } // 新增 wikiTagsList 属性
             public string wikiHiddenTags { get; set; } // 原始 wikiHiddenTags 属性
             public List<string> wikiHiddenTagsList { get; set; } // 新增 wikiHiddenTagsList 属性
+            public List<string> Races { get; set; } // 新增 Races 属性
+            public List<string> RacesList { get; set; } // 新增 Races 属性
         }
 
         public List<CardWikiData> CardDataList { get; private set; } // 公共属性，供其他文件访问

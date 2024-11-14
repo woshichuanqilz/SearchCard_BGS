@@ -6,8 +6,7 @@
         xmlns:local="clr-namespace:CardSearcher"
         mc:Ignorable="d" 
         Title="Card Searcher" Height="450" Width="800"
-        FontFamily="OriFont2"
-        >
+        FontFamily="OriFont2" >
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="0.14*" />
@@ -56,10 +55,23 @@
                         <Image Source="{Binding ImageSource}" Width="50" Height="50" Margin="0,0,10,0" 
                                MouseEnter="Image_MouseEnter" MouseLeave="Image_MouseLeave" />
                         <TextBlock Text="{Binding DisplayText}" VerticalAlignment="Center" FontSize="14" />
+
+                        <!-- 新增的 StackPanel 用于显示 Race 和 SecondaryRace -->
+                        <StackPanel Orientation="Vertical" Margin="10,0,0,0">
+                            <ItemsControl ItemsSource="{Binding Races}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="Blue" CornerRadius="10" Margin="5">
+                                            <TextBlock Text="{Binding}" Foreground="Yellow" Padding="5" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
                         
                         <!-- 用于放置标签的 StackPanel horizontal -->
                         <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                            <ItemsControl ItemsSource="{Binding Tags}">
+                            <ItemsControl ItemsSource="{Binding Tags}" VerticalAlignment="Center">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <WrapPanel Orientation="Horizontal" />
@@ -67,13 +79,18 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="Orange" CornerRadius="10" Margin="5">
-                                            <TextBlock Text="{Binding}" Padding="5" />
+                                        <Border Background="Orange" CornerRadius="10" Margin="5" 
+                                                HorizontalAlignment="Left" MaxWidth="200" 
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding}" Padding="5" 
+                                                       TextTrimming="None" 
+                                                       TextWrapping="Wrap" />
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </StackPanel>
+
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>

@@ -76,21 +76,24 @@ namespace CardSearcher
                     var image = await GetCardImageAsync(tmpCard.Id); // 获取卡片图片
                     var tags = new List<string>();
                     var keywords = new List<string>();
+                    var races = new List<string>();
                     if (is_bg){
                         // wikitags if wikiTagsList is null, create a new list
                         tags = cardDataList.Find(card => card.id == tmpCard.Id).wikiTagsList ?? new List<string>();
                         // add keywordsList if keywordsList is not null
                         keywords = cardDataList.Find(card => card.id == tmpCard.Id).KeywordsList;
+                        races = cardDataList.Find(card => card.id == tmpCard.Id).RacesList;
                     }
                     else if (is_number){
                         tags = cardDataList.Find(card => card.dbfId == tmpCard.DbfId.ToString()).wikiTagsList ?? new List<string>();
                         keywords = cardDataList.Find(card => card.dbfId == tmpCard.DbfId.ToString()).KeywordsList;
+                        races = cardDataList.Find(card => card.dbfId == tmpCard.DbfId.ToString()).RacesList;
                     }
                     if (keywords != null)
                     {
                         tags.AddRange(keywords);
                     }
-                    cardResults.Add(new CardResult { ImageSource = image, DisplayText = tmpCard.GetLocName(Locale.zhCN), Tags = tags }); // 添加到集合
+                    cardResults.Add(new CardResult { ImageSource = image, DisplayText = tmpCard.GetLocName(Locale.zhCN), Tags = tags, Races = races }); // 添加到集合
                 }
             }
         }
@@ -179,6 +182,24 @@ namespace CardSearcher
                 image.Tag = null; // 清除引用
             }
         }
+
+        private void Tags_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is ItemsControl itemsControl)
+            {
+                var clickedTag = (string)((FrameworkElement)e.OriginalSource).DataContext;
+                //ControlA.Text += clickedTag + " "; // 将点击的标签添加到控件A中
+            }
+        }
+
+        private void Races_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is ItemsControl itemsControl)
+            {
+                var clickedRace = (string)((FrameworkElement)e.OriginalSource).DataContext;
+                //ControlA.Text += clickedRace + " "; // 将点击的种族添加到控件A中
+            }
+        }
     }
 
     // 用于存储卡片结果的类
@@ -189,5 +210,6 @@ namespace CardSearcher
 
         // 用于存储标签的列表
         public List<string> Tags { get; set; } = new List<string>(); // 初始化为一个空列表
+        public List<string> Races { get; set; } = new List<string>(); // 初始化为一个空列表
     }
 }
