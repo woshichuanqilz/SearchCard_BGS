@@ -17,14 +17,13 @@ using System.IO;
 using System.Net.Http;
 using System.Collections.ObjectModel;
 using HearthDb.Enums;
-using System.Windows.Forms;
 
 namespace CardSearcher
 {
     /// <summary>
     /// SearchWindow.xaml 的交互逻辑
     /// </summary>
-    public partial class SearchWindow 
+    public partial class SearchWindow
     {
         private static readonly HttpClient httpClient = new HttpClient();
         private ObservableCollection<CardResult> cardResults;
@@ -54,17 +53,20 @@ namespace CardSearcher
                 bool is_bg = tmp_Id.StartsWith("bg");
                 bool is_number = tmp_Id.All(char.IsDigit);
                 // tmp_Id is start with "bg" 
-                if (is_bg){
+                if (is_bg)
+                {
                     resultList = await Task.Run(() => cardSearcher.GetBaconCards()
                         .Where(kvp => kvp.Id.ToLower().Contains(tmp_Id.ToLower()))
                         .ToList());
                 }
                 // tmp_Id is number
-                else if (is_number){
+                else if (is_number)
+                {
                     resultList = await Task.Run(() => cardSearcher.GetBaconCards()
                         .Where(kvp => kvp.DbfId.ToString().Contains(tmp_Id))
                         .ToList());
                 }
+
                 var cardDataList = cardSearcher.CardDataList;
                 // 输出结果数量到控制台
                 Console.WriteLine($"resultList.count: {resultList.Count}");
@@ -80,23 +82,31 @@ namespace CardSearcher
                     var tags = new List<string>();
                     var keywords = new List<string>();
                     var races = new List<string>();
-                    if (is_bg){
+                    if (is_bg)
+                    {
                         // wikitags if wikiTagsList is null, create a new list
                         tags = cardDataList.Find(card => card.id == tmpCard.Id).wikiTagsList ?? new List<string>();
                         // add keywordsList if keywordsList is not null
                         keywords = cardDataList.Find(card => card.id == tmpCard.Id).KeywordsList;
                         races = cardDataList.Find(card => card.id == tmpCard.Id).RacesList;
                     }
-                    else if (is_number){
-                        tags = cardDataList.Find(card => card.dbfId == tmpCard.DbfId.ToString()).wikiTagsList ?? new List<string>();
+                    else if (is_number)
+                    {
+                        tags = cardDataList.Find(card => card.dbfId == tmpCard.DbfId.ToString()).wikiTagsList ??
+                               new List<string>();
                         keywords = cardDataList.Find(card => card.dbfId == tmpCard.DbfId.ToString()).KeywordsList;
                         races = cardDataList.Find(card => card.dbfId == tmpCard.DbfId.ToString()).RacesList;
                     }
+
                     if (keywords != null)
                     {
                         tags.AddRange(keywords);
                     }
-                    cardResults.Add(new CardResult { ImageSource = image, DisplayText = tmpCard.GetLocName(Locale.zhCN), Tags = tags, Races = races }); // 添加到集合
+
+                    cardResults.Add(new CardResult
+                    {
+                        ImageSource = image, DisplayText = tmpCard.GetLocName(Locale.zhCN), Tags = tags, Races = races
+                    }); // 添加到集合
                 }
             }
         }
@@ -129,7 +139,8 @@ namespace CardSearcher
                 var imageBytes = await httpClient.GetByteArrayAsync(url);
 
                 // 使用 FileStream 异步写入文件
-                using (var fileStream = new FileStream(imagePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                using (var fileStream = new FileStream(imagePath, FileMode.Create, FileAccess.Write, FileShare.None,
+                           4096, useAsync: true))
                 {
                     await fileStream.WriteAsync(imageBytes, 0, imageBytes.Length);
                 }
@@ -169,7 +180,7 @@ namespace CardSearcher
                 // 获取图片在屏幕上的位置
                 var position = image.PointToScreen(new Point(0, 0));
                 popup.Left = (position.X + (image.ActualWidth / 2) - (popup.Width / 2)) / 2 + 10;
-                popup.Top = (position.Y + image.ActualHeight)/2 + 35;
+                popup.Top = (position.Y + image.ActualHeight) / 2 + 35;
 
                 popup.Show();
                 image.Tag = popup; // 保存窗口引用
@@ -215,16 +226,34 @@ namespace CardSearcher
 
             SearchFilterItems.Add(item.ToString()); // 将项目添加到集合中
         }
-    }
 
-    // 用于存储卡片结果的类
-    public class CardResult
-    {
-        public BitmapImage ImageSource { get; set; }
-        public string DisplayText { get; set; }
+        // ... existing code ...
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 获取被点击的按钮
+            Button closeButton = sender as Button;
+            if (closeButton != null)
+            {
+                // 获取绑定的项
+                var item = closeButton.Tag; // 获取 Tag 中的值
 
-        // 用于存储标签的列表
-        public List<string> Tags { get; set; } = new List<string>(); // 初始化为一个空列表
-        public List<string> Races { get; set; } = new List<string>(); // 初始化为一个空列表
+                // 从 SearchFilterItems 中移除该项
+                if (item != null && SearchFilterItems.Contains(item.ToString()))
+                {
+                    SearchFilterItems.Remove(item.ToString());
+                }
+            }
+        }
+
+        // 用于存储卡片结果的类
+        public class CardResult
+        {
+            public BitmapImage ImageSource { get; set; }
+            public string DisplayText { get; set; }
+
+            // 用于存储标签的列表
+            public List<string> Tags { get; set; } = new List<string>(); // 初始化为一个空列表
+            public List<string> Races { get; set; } = new List<string>(); // 初始化为一个空列表
+        }
     }
 }
