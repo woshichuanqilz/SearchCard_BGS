@@ -1,7 +1,10 @@
-﻿using HearthDb;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,13 +16,55 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.IO;
-using System.Net.Http;
-using System.Collections.ObjectModel;
+using HearthDb;
 using HearthDb.Enums;
 
 namespace CardSearcher
 {
+    public class SearchItem : INotifyPropertyChanged
+    {
+        private string _name;
+        private SolidColorBrush _color;
+        private SolidColorBrush _foreColor;
+
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                _name = value;
+                OnPropertyChanged(nameof(Name));
+            }
+        }
+
+        public SolidColorBrush ForeColor
+        {
+            get => _foreColor;
+            set
+            {
+                _foreColor = value;
+                OnPropertyChanged(nameof(ForeColor));
+            }
+        }
+
+        public SolidColorBrush Color
+        {
+            get => _color;
+            set
+            {
+                _color = value;
+                OnPropertyChanged(nameof(Color));
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+
     /// <summary>
     /// SearchWindow.xaml 的交互逻辑
     /// </summary>
@@ -27,7 +72,7 @@ namespace CardSearcher
     {
         private static readonly HttpClient httpClient = new HttpClient();
         private ObservableCollection<CardResult> cardResults;
-        private ObservableCollection<string> SearchFilterItems;
+        private ObservableCollection<SearchItem> SearchFilterItems;
         private CardSearcher cardSearcher;
 
         public SearchWindow()
@@ -36,13 +81,13 @@ namespace CardSearcher
             InputBox.TextChanged += InputBox_TextChanged;
             cardResults = new ObservableCollection<CardResult>();
             ResultsListView.ItemsSource = cardResults;
-            SearchFilterItems = new ObservableCollection<string>();
+            SearchFilterItems = new ObservableCollection<SearchItem>();
             SearchFilter.ItemsSource = SearchFilterItems;
             cardSearcher = new CardSearcher();
             Task.Run(async () => await cardSearcher.Run()); // 使用 Task.Run 来处理异步调用
         }
 
-        // async method 
+        // async method
         private async void InputBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string tmp_Id = InputBox.Text;
@@ -52,19 +97,27 @@ namespace CardSearcher
                 var resultList = new List<Card>();
                 bool is_bg = tmp_Id.StartsWith("bg");
                 bool is_number = tmp_Id.All(char.IsDigit);
-                // tmp_Id is start with "bg" 
+                // tmp_Id is start with "bg"
                 if (is_bg)
                 {
-                    resultList = await Task.Run(() => cardSearcher.GetBaconCards()
-                        .Where(kvp => kvp.Id.ToLower().Contains(tmp_Id.ToLower()))
-                        .ToList());
+                    resultList = await Task.Run(
+                        () =>
+                            cardSearcher
+                                .GetBaconCards()
+                                .Where(kvp => kvp.Id.ToLower().Contains(tmp_Id.ToLower()))
+                                .ToList()
+                    );
                 }
                 // tmp_Id is number
                 else if (is_number)
                 {
-                    resultList = await Task.Run(() => cardSearcher.GetBaconCards()
-                        .Where(kvp => kvp.DbfId.ToString().Contains(tmp_Id))
-                        .ToList());
+                    resultList = await Task.Run(
+                        () =>
+                            cardSearcher
+                                .GetBaconCards()
+                                .Where(kvp => kvp.DbfId.ToString().Contains(tmp_Id))
+                                .ToList()
+                    );
                 }
 
                 var cardDataList = cardSearcher.CardDataList;
@@ -85,17 +138,25 @@ namespace CardSearcher
                     if (is_bg)
                     {
                         // wikitags if wikiTagsList is null, create a new list
-                        tags = cardDataList.Find(card => card.id == tmpCard.Id).wikiTagsList ?? new List<string>();
+                        tags =
+                            cardDataList.Find(card => card.id == tmpCard.Id).wikiTagsList
+                            ?? new List<string>();
                         // add keywordsList if keywordsList is not null
                         keywords = cardDataList.Find(card => card.id == tmpCard.Id).KeywordsList;
                         races = cardDataList.Find(card => card.id == tmpCard.Id).RacesList;
                     }
                     else if (is_number)
                     {
-                        tags = cardDataList.Find(card => card.dbfId == tmpCard.DbfId.ToString()).wikiTagsList ??
-                               new List<string>();
-                        keywords = cardDataList.Find(card => card.dbfId == tmpCard.DbfId.ToString()).KeywordsList;
-                        races = cardDataList.Find(card => card.dbfId == tmpCard.DbfId.ToString()).RacesList;
+                        tags =
+                            cardDataList
+                                .Find(card => card.dbfId == tmpCard.DbfId.ToString())
+                                .wikiTagsList ?? new List<string>();
+                        keywords = cardDataList
+                            .Find(card => card.dbfId == tmpCard.DbfId.ToString())
+                            .KeywordsList;
+                        races = cardDataList
+                            .Find(card => card.dbfId == tmpCard.DbfId.ToString())
+                            .RacesList;
                     }
 
                     if (keywords != null)
@@ -103,10 +164,15 @@ namespace CardSearcher
                         tags.AddRange(keywords);
                     }
 
-                    cardResults.Add(new CardResult
-                    {
-                        ImageSource = image, DisplayText = tmpCard.GetLocName(Locale.zhCN), Tags = tags, Races = races
-                    }); // 添加到集合
+                    cardResults.Add(
+                        new CardResult
+                        {
+                            ImageSource = image,
+                            DisplayText = tmpCard.GetLocName(Locale.zhCN),
+                            Tags = tags,
+                            Races = races,
+                        }
+                    ); // 添加到集合
                 }
             }
         }
@@ -139,8 +205,16 @@ namespace CardSearcher
                 var imageBytes = await httpClient.GetByteArrayAsync(url);
 
                 // 使用 FileStream 异步写入文件
-                using (var fileStream = new FileStream(imagePath, FileMode.Create, FileAccess.Write, FileShare.None,
-                           4096, useAsync: true))
+                using (
+                    var fileStream = new FileStream(
+                        imagePath,
+                        FileMode.Create,
+                        FileAccess.Write,
+                        FileShare.None,
+                        4096,
+                        useAsync: true
+                    )
+                )
                 {
                     await fileStream.WriteAsync(imageBytes, 0, imageBytes.Length);
                 }
@@ -173,8 +247,8 @@ namespace CardSearcher
                         Source = image.Source,
                         Stretch = Stretch.Uniform,
                         Width = 200,
-                        Height = 200
-                    }
+                        Height = 200,
+                    },
                 };
 
                 // 获取图片在屏幕上的位置
@@ -197,37 +271,68 @@ namespace CardSearcher
             }
         }
 
-        private void Tags_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is ItemsControl itemsControl)
-            {
-                var clickedTag = (string)((FrameworkElement)e.OriginalSource).DataContext;
-                //ControlA.Text += clickedTag + " "; // 将点击的标签添加到控件A中
-            }
-        }
-
         private void RaceItem_MouseDown(object sender, MouseButtonEventArgs e)
         {
             var clickedItem = (sender as Border)?.DataContext; // 获取被点击的项目
             if (clickedItem != null)
             {
                 // 将点击的项目添加到 SearchFilter 中
-                AddItemToSearchFilter(clickedItem);
+                AddItemToSearchFilter(
+                    new SearchItem
+                    {
+                        Name = clickedItem.ToString(),
+                        Color = Brushes.Blue,
+                        ForeColor = Brushes.White,
+                    }
+                );
             }
         }
 
-        private void AddItemToSearchFilter(object item)
+        private void Tags_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            // 假设你有一个 ObservableCollection<string> 用于存储 SearchFilter 中的项目
-            if (SearchFilterItems == null)
+            var clickedItem = (sender as Border)?.DataContext; // 获取被点击的项目
+            if (clickedItem != null)
             {
-                SearchFilterItems = new ObservableCollection<string>();
+                AddItemToSearchFilter(
+                    new SearchItem
+                    {
+                        Name = clickedItem.ToString(),
+                        Color = Brushes.Orange,
+                        ForeColor = Brushes.Black,
+                    }
+                );
             }
-
-            SearchFilterItems.Add(item.ToString()); // 将项目添加到集合中
         }
 
-        // ... existing code ...
+        private void AddItemToSearchFilter(object clickedItem)
+        {
+            // 假设 clickedItem 是 SearchItem 类型
+            if (clickedItem is SearchItem item)
+            {
+                // 创建新的 SearchItem 并设置颜色为橙色
+                var newItem = new SearchItem
+                {
+                    Name = item.Name, // 设置名称
+                    Color = item.Color,
+                    ForeColor = item.ForeColor,
+                };
+
+                // 将新项添加到 SearchFilterItems
+                // 检查 SearchFilterItems 中是否已经存在该项
+                if (
+                    !SearchFilterItems.Any(i =>
+                        i.Name == newItem.Name
+                        && i.Color == newItem.Color
+                        && i.ForeColor == newItem.ForeColor
+                    )
+                )
+                {
+                    // 将新项添加到 SearchFilterItems
+                    SearchFilterItems.Add(newItem);
+                }
+            }
+        }
+
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             // 获取被点击的按钮
@@ -238,9 +343,9 @@ namespace CardSearcher
                 var item = closeButton.Tag; // 获取 Tag 中的值
 
                 // 从 SearchFilterItems 中移除该项
-                if (item != null && SearchFilterItems.Contains(item.ToString()))
+                if (item != null && SearchFilterItems.Contains(item as SearchItem))
                 {
-                    SearchFilterItems.Remove(item.ToString());
+                    SearchFilterItems.Remove(item as SearchItem);
                 }
             }
         }

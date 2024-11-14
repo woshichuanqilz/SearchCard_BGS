@@ -22,14 +22,15 @@
             ScrollViewer.VerticalScrollBarVisibility="Auto"> <!-- 将 StackPanel 改为 ListView -->
             <ListView.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <StackPanel Background="Transparent" Orientation="Horizontal" />
+                    <WrapPanel Orientation="Horizontal" />
                 </ItemsPanelTemplate>
             </ListView.ItemsPanel>
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal"> <!-- 使用 StackPanel 以水平排列 -->
-                        <Border Background="Blue" CornerRadius="10" Margin="1">
-                            <TextBlock Text="{Binding}" Foreground="Yellow" Padding="3" />
+                        <Border Background="{Binding Color}" CornerRadius="10" Margin="1">
+                            <TextBlock Text="{Binding Name}" Foreground="{Binding ForeColor}"
+                                Padding="3" />
                         </Border>
                         <Button Width="20" Height="20" Margin="1" Click="CloseButton_Click"
                             Tag="{Binding }"
@@ -120,7 +121,9 @@
                                     <DataTemplate>
                                         <Border Background="Orange" CornerRadius="10" Margin="5"
                                             HorizontalAlignment="Left" MaxWidth="200"
-                                            VerticalAlignment="Center">
+                                            VerticalAlignment="Center"
+                                            MouseDown="Tags_MouseDown"
+                                        >
                                             <TextBlock Text="{Binding}" Padding="5"
                                                 TextTrimming="None"
                                                 TextWrapping="Wrap" />
