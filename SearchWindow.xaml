@@ -42,7 +42,7 @@
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
                         <!-- 使用 StackPanel 以水平排列 -->
-                        <Border Background="{Binding Color}" CornerRadius="10" Margin="1">
+                        <Border Background="{Binding BkgColor}" CornerRadius="10" Margin="1">
                             <TextBlock Text="{Binding Name}" Foreground="{Binding ForeColor}"
                                 Padding="3" />
                         </Border>
@@ -133,7 +133,7 @@
                                     </Style>
                                 </ListView.Resources>
                                 <ItemsControl ItemsSource="{Binding Tags1}"
-                                    VerticalAlignment="Center">
+                                    VerticalAlignment="Center" Tag="{Binding}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
                                             <WrapPanel />
@@ -144,6 +144,7 @@
                                         <DataTemplate>
                                             <Border
                                                 MaxWidth="200"
+                                                Tag="{Binding ItemType}"
                                                 Background="{Binding BkgColor}"
                                                 CornerRadius="10"
                                                 MouseDown="AddItemToSearchFilter"
@@ -197,6 +198,7 @@
                                             <Border
                                                 MaxWidth="200"
                                                 Background="{Binding BkgColor}"
+                                                Tag="{Binding ItemType}"
                                                 CornerRadius="10"
                                                 MouseDown="AddItemToSearchFilter"
                                                 Margin="5"

@@ -187,6 +187,9 @@ namespace CardSearcher
                         // remove duplicated item in wikiMechanicsList with wikiTagsList ignore case and if WikiMechanicsList is not null
                         if (card.WikiTagsList != null)
                             card.WikiMechanicsList = card.WikiMechanicsList?.Where(item => !card.WikiTagsList.Contains(item, StringComparer.OrdinalIgnoreCase)).ToList();
+                        // remove duplicated item in wikiMechanicsList with keywordsList ignore case
+                        if (card.KeywordsList != null)
+                            card.WikiMechanicsList = card.WikiMechanicsList?.Where(item => !card.KeywordsList.Contains(item, StringComparer.OrdinalIgnoreCase)).ToList();
 
                         // 处理 keywords 字段 and make it lower case
                         card.KeywordsList = card.Keywords?.ToLower().Split(' ').ToList(); // 将 keywords 转换为 List<string>
@@ -203,6 +206,10 @@ namespace CardSearcher
                             combinedList.AddRange(card.WikiTagsList.Select(item => (item, "WikiTags")).Distinct());
                         if (card.KeywordsList != null)
                             combinedList.AddRange(card.KeywordsList.Select(item => (item, "Keywords")).Distinct());
+                        combinedList = combinedList
+                            .GroupBy(item => item.Item1.ToLower()) // 忽略大小写
+                            .Select(group => group.First()) // 选择每组的第一个项
+                            .ToList();
                     }
 
                     return cardDataList; // 返回包含关键字的 CardWikiData 列表
