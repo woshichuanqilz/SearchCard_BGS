@@ -112,26 +112,68 @@
                         <TextBlock Text="{Binding DisplayText}" VerticalAlignment="Center"
                             FontSize="14" />
 
-                        <!-- 显示 Race 标签的 StackPanel -->
-                        <!--<ItemsControl
-                        ItemsSource="{Binding Tags}">-->
-                        <ItemsControl ItemsSource="{Binding Tags}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border
-                                        MaxWidth="200"
-                                        Background="{Binding BkgColor}" CornerRadius="10" HorizontalAlignment="Left" MouseDown="AddItemToSearchFilter" Margin="5">
-                                        <TextBlock Text="{Binding Name}"
-                                            Foreground="{Binding ForeColor}" Padding="5" />
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="0.5*" />
+                                <RowDefinition Height="0.5*" />
+                            </Grid.RowDefinitions>
+
+                            <ListView Grid.Row="0">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="VerticalContentAlignment" Value="Center" />
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ItemsControl ItemsSource="{Binding Tags1}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="1" />
+                                            <!-- 使用 UniformGrid 以确保项均匀排列 -->
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border
+                                                MaxWidth="200"
+                                                Background="{Binding BkgColor}"
+                                                CornerRadius="10"
+                                                MouseDown="AddItemToSearchFilter"
+                                                Margin="5"
+                                                VerticalAlignment="Center">
+                                                <!-- 确保 Border 垂直居中 -->
+                                                <TextBlock Text="{Binding Name}"
+                                                           Foreground="{Binding ForeColor}" 
+                                                           Padding="5" 
+                                                           VerticalAlignment="Center" />
+                                                <!-- 确保 TextBlock 垂直居中 -->
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ListView>
+
+                            <ListView Grid.Row="1">
+                                <ItemsControl ItemsSource="{Binding Tags2}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border
+                                                MaxWidth="200"
+                                                Background="{Binding BkgColor}" CornerRadius="10"
+                                                HorizontalAlignment="Left"
+                                                MouseDown="AddItemToSearchFilter" Margin="5">
+                                                <TextBlock Text="{Binding Name}"
+                                                    Foreground="{Binding ForeColor}" Padding="5" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ListView>
+                        </Grid>
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>

@@ -192,12 +192,15 @@ namespace CardSearcher
                     tag.BkgColor = colorDictionary[tag.ItemType][1];
                 }
 
+                var tags1 = tags.Take(tags.Count / 2).ToList();
+                var tags2 = tags.Skip(tags.Count / 2).ToList();
                 _cardResults.Add(
                     new CardResult
                     {
                         ImageSource = image,
                         DisplayText = tmpCard.GetLocName(Locale.zhCN),
-                        Tags = tags
+                        Tags1 = tags1,
+                        Tags2 = tags2
                     }
                 ); // 添加到集合
             }
@@ -349,7 +352,8 @@ namespace CardSearcher
             public string DisplayText { get; set; }
 
             // 用于存储标签的列表
-            public List<TagContent> Tags { get; set; }
+            public List<TagContent> Tags1 { get; set; }
+            public List<TagContent> Tags2 { get; set; }
         }
 
         private async void SearchFilterItems_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -371,7 +375,8 @@ namespace CardSearcher
             // 根据标签进行搜索的逻辑
             // 这里假设您有一个方法可以根据标签获取卡片
             var resultList = await _cardSearcher.GetCardsByTags(tags);
-
+            var tags1 = tags.Take(tags.Count / 2).ToList();
+            var tags2 = tags.Skip(tags.Count / 2).ToList();
 
             // 遍历结果并下载图片
             foreach (var tmpCard in resultList)
@@ -383,7 +388,8 @@ namespace CardSearcher
                     {
                         ImageSource = image,
                         DisplayText = dbCard?.GetLocName(Locale.zhCN),
-                        Tags = tags,
+                        Tags1 = tags1,
+                        Tags2 = tags2,
                     }
                 ); // 添加到集合
             }
