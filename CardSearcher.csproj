@@ -63,9 +63,6 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="untapped-scry-dotnet">
-      <HintPath>C:\Users\Administrator\AppData\Local\HearthstoneDeckTracker\app-1.36.4\untapped-scry-dotnet.dll</HintPath>
-    </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>

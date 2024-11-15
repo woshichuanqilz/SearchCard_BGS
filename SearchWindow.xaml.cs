@@ -19,6 +19,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using HearthDb;
+using HearthDb.CardDefs;
 using HearthDb.Enums;
 
 namespace CardSearcher
@@ -26,7 +27,7 @@ namespace CardSearcher
     public class SearchItem : INotifyPropertyChanged
     {
         private string _name;
-        private SolidColorBrush _color;
+        private SolidColorBrush _bkgColor;
         private SolidColorBrush _foreColor;
         public string ItemType { get; set; }
 
@@ -50,13 +51,13 @@ namespace CardSearcher
             }
         }
 
-        public SolidColorBrush Color
+        public SolidColorBrush BkgColor
         {
-            get => _color;
+            get => _bkgColor;
             set
             {
-                _color = value;
-                OnPropertyChanged(nameof(Color));
+                _bkgColor = value;
+                OnPropertyChanged(nameof(BkgColor));
             }
         }
 
@@ -163,40 +164,35 @@ namespace CardSearcher
             foreach (var tmpCard in resultList)
             {
                 var image = await GetCardImageAsync(tmpCard.Id); // 获取卡片图片
-                var tags = new List<string>();
-                var keywords = new List<string>();
-                var races = new List<string>();
+                var keywords = new List<TagContent>();
+                var races = new List<TagContent>();
+                var wikiTags = new List<TagContent>();
+                var wikiMechanics = new List<TagContent>();
                 if (isBg)
                 {
                     // wikitags if wikiTagsList is null, create a new list
-                    tags =
-                        cardDataList.Find(card => card.Id == tmpCard.Id).WikiTagsList
-                        ?? new List<string>();
-                    // add keywordsList if keywordsList is not null
-                    keywords = cardDataList.Find(card => card.Id == tmpCard.Id).KeywordsList;
-                    races = cardDataList.Find(card => card.Id == tmpCard.Id).RacesList;
+                    wikiTags = cardDataList.Find(card => card.Id == tmpCard.Id).WikiTagsList?.Select(tag => new TagContent { Name = tag, ItemType = "Tag" }).ToList() ?? new List<TagContent>();
+                    keywords = cardDataList.Find(card => card.Id == tmpCard.Id).KeywordsList?.Select(tag => new TagContent { Name = tag, ItemType = "Keyword" }).ToList() ?? new List<TagContent>();
+                    races = cardDataList.Find(card => card.Id == tmpCard.Id).RacesList?.Select(tag => new TagContent { Name = tag, ItemType = "Race" }).ToList() ?? new List<TagContent>();
+                    wikiMechanics = cardDataList.Find(card => card.Id == tmpCard.Id).WikiMechanicsList?.Select(tag => new TagContent { Name = tag, ItemType = "WikiMechanic" }).ToList() ?? new List<TagContent>();
                 }
                 else if (isNumber)
                 {
-                    tags =
-                        cardDataList
-                            .Find(card => card.DbfId == tmpCard.DbfId.ToString())
-                            .WikiTagsList ?? new List<string>();
-                    keywords = cardDataList
-                        .Find(card => card.DbfId == tmpCard.DbfId.ToString())
-                        .KeywordsList;
-                    races = cardDataList
-                        .Find(card => card.DbfId == tmpCard.DbfId.ToString())
-                        .RacesList;
+                    wikiTags = cardDataList.Find(card => card.DbfId == tmpCard.DbfId.ToString()).WikiTagsList?.Select(tag => new TagContent { Name = tag, ItemType = "Tag" }).ToList() ?? new List<TagContent>();
+                    keywords = cardDataList.Find(card => card.DbfId == tmpCard.DbfId.ToString()).KeywordsList?.Select(tag => new TagContent { Name = tag, ItemType = "Keyword" }).ToList() ?? new List<TagContent>();
+                    races = cardDataList.Find(card => card.DbfId == tmpCard.DbfId.ToString()).RacesList?.Select(tag => new TagContent { Name = tag, ItemType = "Race" }).ToList() ?? new List<TagContent>();
+                    wikiMechanics = cardDataList.Find(card => card.DbfId == tmpCard.DbfId.ToString()).WikiMechanicsList?.Select(tag => new TagContent { Name = tag, ItemType = "WikiMechanic" }).ToList() ?? new List<TagContent>();
                 }
+
+                // merge wikiTags, keywords, races, wikiMechanics
+                var tags = wikiTags.Concat(keywords).Concat(races).Concat(wikiMechanics).ToList();
 
                 _cardResults.Add(
                     new CardResult
                     {
                         ImageSource = image,
                         DisplayText = tmpCard.GetLocName(Locale.zhCN),
-                        WikiTags = tags,
-                        Races = races,
+                        Tags = tags,
                     }
                 ); // 添加到集合
             }
@@ -276,50 +272,15 @@ namespace CardSearcher
             image.Tag = null; // 清除引用
         }
 
-        private void RaceItem_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            var clickedItem = (sender as Border)?.DataContext; // 获取被点击的项目
-            if (clickedItem != null)
-            {
-                // 将点击的项目添加到 SearchFilter 中
-                AddItemToSearchFilter(
-                    new SearchItem
-                    {
-                        Name = clickedItem.ToString(),
-                        ForeColor = colorDictionary["Races"][0],
-                        Color = colorDictionary["Races"][1],
-                        ItemType = "Race",
-                    }
-                );
-            }
-        }
-
-        private void Tags_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            var clickedItem = (sender as Border)?.DataContext; // 获取被点击的项目
-            if (clickedItem != null)
-            {
-                AddItemToSearchFilter(
-                    new SearchItem
-                    {
-                        Name = clickedItem.ToString(),
-                        ForeColor = colorDictionary["WikiTags"][0],
-                        Color = colorDictionary["WikiTags"][1],
-                        ItemType = "Tag",
-                    }
-                );
-            }
-        }
-
-        private void AddItemToSearchFilter(object clickedItem)
+        private void AddItemToSearchFilter(object sender, MouseButtonEventArgs e)
         {
             // 假设 clickedItem 是 SearchItem 类型
-            if (!(clickedItem is SearchItem item)) return;
+            if (!(sender is SearchItem item)) return;
             // 创建新的 SearchItem 并设置颜色和类型
             var newItem = new SearchItem
             {
                 Name = item.Name, // 设置名称
-                Color = item.Color,
+                BkgColor = item.BkgColor,
                 ForeColor = item.ForeColor,
                 ItemType = item.ItemType // 设置类型为 tags 或 races
             };
@@ -368,6 +329,14 @@ namespace CardSearcher
             }
         }
 
+        public class TagContent
+        {
+            public string Name { get; set; }
+            public string ItemType { get; set; }
+            public SolidColorBrush ForeColor { get; set; }
+            public SolidColorBrush BkgColor { get; set; }
+        }
+
         // 用于存储卡片结果的类
         public class CardResult
         {
@@ -375,40 +344,28 @@ namespace CardSearcher
             public string DisplayText { get; set; }
 
             // 用于存储标签的列表
-            public List<string> WikiTags { get; set; } = new List<string>(); // 初始化一个空列表
-            public List<string> Races { get; set; } = new List<string>(); // 初始化为一个空列表
-            public List<string> Keywords { get; set; } = new List<string>(); // 初始化为一个空列表
-
-            public List<string> WikiMechanics { get; set; } = new List<string>(); // 初始化为一个空列表
+            public List<TagContent> Tags { get; set; } = new List<TagContent>(); // 初始化一个空列表
         }
 
         private async void SearchFilterItems_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             // 清空之前的结果
             _cardResults.Clear();
+            // _searchFilterItems to TagContent list
+            var tags = _searchFilterItems.ToList().Select(item => new TagContent { Name = item.Name, ItemType = item.ItemType, ForeColor = item.ForeColor, BkgColor = item.BkgColor }).ToList();
 
             // 提取所有标签
-            var tags = _searchFilterItems
-                .Where(item => item.ItemType == "Tag") // 只提取标签
-                .Select(item => item.Name)
-                .ToList();
-
-            // 需要把种族也提取出来
-            var races = _searchFilterItems
-                .Where(item => item.ItemType == "Race") // 只提取种族
-                .Select(item => item.Name)
-                .ToList();
-            await SearchByTags(tags, races);
+            await SearchByTags(tags);
         }
 
-        private async Task SearchByTags(List<string> tags, List<string> races)
+        private async Task SearchByTags(List<TagContent> tags)
         {
             // 清空之前的结果
             _cardResults.Clear();
 
             // 根据标签进行搜索的逻辑
             // 这里假设您有一个方法可以根据标签获取卡片
-            var resultList = await _cardSearcher.GetCardsByTagsAndRaces(tags, races);
+            var resultList = await _cardSearcher.GetCardsByTags(tags);
 
 
             // 遍历结果并下载图片
@@ -421,10 +378,7 @@ namespace CardSearcher
                     {
                         ImageSource = image,
                         DisplayText = dbCard?.GetLocName(Locale.zhCN),
-                        WikiTags = tmpCard.WikiTagsList,
-                        Keywords = tmpCard.KeywordsList,
-                        WikiMechanics = tmpCard.WikiMechanicsList,
-                        Races = tmpCard.RacesList
+                        Tags = tags,
                     }
                 ); // 添加到集合
             }

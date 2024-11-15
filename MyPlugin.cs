@@ -23,6 +23,7 @@ using System.Runtime.CompilerServices;
 using System.Net.Http;
 using Newtonsoft.Json; // 确保你已经安装了 Newtonsoft.Json 包
 using System.Threading.Tasks;
+using static CardSearcher.SearchWindow;
 
 namespace CardSearcher
 {
@@ -222,12 +223,19 @@ namespace CardSearcher
         }
 
         // GetCardsByTagsAndRaces
-        public Task<List<CardWikiData>> GetCardsByTagsAndRaces(List<string> tags, List<string> races)
+        public Task<List<CardWikiData>> GetCardsByTags(List<TagContent> tags)
         {
-            // 根据 tags 和 races 进行搜索 需要搜索包含所有 tags 和 races 的卡片, wikiTagsList 和 RacesList 都是 List<string> and not null 
+            // separate tags by itemType
+            var wikiTags = tags.Where(tag => tag.ItemType == "WikiTags").Select(tag => tag.Name).ToList();
+            var keywords = tags.Where(tag => tag.ItemType == "Keywords").Select(tag => tag.Name).ToList();
+            var races = tags.Where(tag => tag.ItemType == "Races").Select(tag => tag.Name).ToList();
+            var wikiMechanics = tags.Where(tag => tag.ItemType == "WikiMechanics").Select(tag => tag.Name).ToList();
+
             var resultList = cardDataList.Where(card =>
-                (card.WikiTagsList != null && tags.All(tag => card.WikiTagsList.Contains(tag))) &&
-                (card.RacesList != null && races.All(race => (card.RacesList.Contains(race) || card.RacesList.Contains("All"))))
+                (card.WikiTagsList != null && wikiTags.All(tag => card.WikiTagsList.Contains(tag))) &&
+                (card.KeywordsList != null && keywords.All(tag => card.KeywordsList.Contains(tag))) &&
+                (card.RacesList != null && races.All(tag => card.RacesList.Contains(tag))) &&
+                (card.WikiMechanicsList != null && wikiMechanics.All(tag => card.WikiMechanicsList.Contains(tag)))
             ).ToList();
             return Task.FromResult(resultList);
         }
