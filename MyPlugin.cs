@@ -195,14 +195,14 @@ namespace CardSearcher
 
 
                         // 合并所有列表并标记来源, 重复内容不添加
+                        if (card.RacesList != null)
+                            combinedList.AddRange(card.RacesList.Select(item => (item, "Races")).Distinct());
                         if (card.WikiMechanicsList != null)
                             combinedList.AddRange(card.WikiMechanicsList.Select(item => (item, "WikiMechanics")).Distinct());
                         if (card.WikiTagsList != null)
                             combinedList.AddRange(card.WikiTagsList.Select(item => (item, "WikiTags")).Distinct());
                         if (card.KeywordsList != null)
                             combinedList.AddRange(card.KeywordsList.Select(item => (item, "Keywords")).Distinct());
-                        if (card.RacesList != null)
-                            combinedList.AddRange(card.RacesList.Select(item => (item, "Races")).Distinct());
                     }
 
                     return cardDataList; // 返回包含关键字的 CardWikiData 列表

@@ -88,16 +88,6 @@
                                 Opacity="0" />
                         </Setter.Value>
                     </Setter>
-                    <Style.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Effect">
-                                <Setter.Value>
-                                    <DropShadowEffect Color="Gray" BlurRadius="10" ShadowDepth="0"
-                                        Opacity="0.5" />
-                                </Setter.Value>
-                            </Setter>
-                        </Trigger>
-                    </Style.Triggers>
                 </Style>
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
@@ -118,17 +108,36 @@
                                 <RowDefinition Height="0.5*" />
                             </Grid.RowDefinitions>
 
-                            <ListView Grid.Row="0">
-                                <ListView.ItemContainerStyle>
+                            <ListView Grid.Row="0" Background="#7FDBFF" BorderThickness="0">
+                                <ListView.Resources>
                                     <Style TargetType="ListViewItem">
-                                        <Setter Property="VerticalContentAlignment" Value="Center" />
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListViewItem">
+                                                    <Border
+                                                        Background="{TemplateBinding Background}"
+                                                        BorderThickness="0">
+                                                        <ContentPresenter />
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#7FDBFF" />
+                                                <Setter Property="BorderThickness" Value="0" />
+                                            </Trigger>
+                                        </Style.Triggers>
                                     </Style>
-                                </ListView.ItemContainerStyle>
-                                <ItemsControl ItemsSource="{Binding Tags1}">
+                                </ListView.Resources>
+                                <ItemsControl ItemsSource="{Binding Tags1}"
+                                    VerticalAlignment="Center">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <UniformGrid Rows="1" />
-                                            <!-- 使用 UniformGrid 以确保项均匀排列 -->
+                                            <WrapPanel />
+                                            <!-- 设置为一行 -->
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
@@ -142,32 +151,62 @@
                                                 VerticalAlignment="Center">
                                                 <!-- 确保 Border 垂直居中 -->
                                                 <TextBlock Text="{Binding Name}"
-                                                           Foreground="{Binding ForeColor}" 
-                                                           Padding="5" 
-                                                           VerticalAlignment="Center" />
+                                                    Foreground="{Binding ForeColor}"
+                                                    Padding="5"
+                                                    VerticalAlignment="Center" />
                                                 <!-- 确保 TextBlock 垂直居中 -->
                                             </Border>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </ListView>
-
-                            <ListView Grid.Row="1">
-                                <ItemsControl ItemsSource="{Binding Tags2}">
+                            <ListView Grid.Row="1" Background="#7FDBFF" BorderThickness="0">
+                                <ListView.Resources>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListViewItem">
+                                                    <Border
+                                                        Background="{TemplateBinding Background}"
+                                                        BorderThickness="0">
+                                                        <ContentPresenter />
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#7FDBFF" />
+                                                <Setter Property="BorderThickness" Value="0" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListView.Resources>
+                                <ItemsControl ItemsSource="{Binding Tags2}"
+                                    VerticalAlignment="Center">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <WrapPanel Orientation="Horizontal" />
+                                            <WrapPanel />
+                                            <!-- 设置为一行 -->
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Border
                                                 MaxWidth="200"
-                                                Background="{Binding BkgColor}" CornerRadius="10"
-                                                HorizontalAlignment="Left"
-                                                MouseDown="AddItemToSearchFilter" Margin="5">
+                                                Background="{Binding BkgColor}"
+                                                CornerRadius="10"
+                                                MouseDown="AddItemToSearchFilter"
+                                                Margin="5"
+                                                VerticalAlignment="Center">
+                                                <!-- 确保 Border 垂直居中 -->
                                                 <TextBlock Text="{Binding Name}"
-                                                    Foreground="{Binding ForeColor}" Padding="5" />
+                                                    Foreground="{Binding ForeColor}"
+                                                    Padding="5"
+                                                    VerticalAlignment="Center" />
+                                                <!-- 确保 TextBlock 垂直居中 -->
                                             </Border>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -178,6 +217,5 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-
     </Grid>
 </Window>

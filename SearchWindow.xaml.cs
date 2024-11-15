@@ -185,7 +185,7 @@ namespace CardSearcher
                 }
 
                 // merge wikiTags, keywords, races, wikiMechanics
-                var tags = wikiTags.Concat(keywords).Concat(races).Concat(wikiMechanics).ToList();
+                var tags = races.Concat(wikiTags).Concat(wikiMechanics).Concat(keywords).ToList();
                 foreach (var tag in tags)
                 {
                     tag.ForeColor = colorDictionary[tag.ItemType][0];
