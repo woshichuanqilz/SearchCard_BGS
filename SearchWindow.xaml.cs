@@ -90,26 +90,26 @@ namespace CardSearcher
             SearchFilter.ItemsSource = _searchFilterItems;
 
             // 在 DownloadAndParseJsonAsync 方法中
-            colorDictionary["WikiMechanics"] = new List<SolidColorBrush>
+            colorDictionary["WikiMechanic"] = new List<SolidColorBrush>
             {
                 Brushes.White,
                 Brushes.Black,
             };
 
-            colorDictionary["WikiTags"] = new List<SolidColorBrush>
+            colorDictionary["WikiTag"] = new List<SolidColorBrush>
             {
                 Brushes.Black,
                 Brushes.Orange,
                 // 可以添加更多颜色
             };
 
-            colorDictionary["Keywords"] = new List<SolidColorBrush>
+            colorDictionary["Keyword"] = new List<SolidColorBrush>
             {
                 Brushes.Black,
                 Brushes.Yellow
             };
 
-            colorDictionary["Races"] = new List<SolidColorBrush>
+            colorDictionary["Race"] = new List<SolidColorBrush>
             {
                 Brushes.White,
                 Brushes.Blue
@@ -178,7 +178,7 @@ namespace CardSearcher
                 }
                 else if (isNumber)
                 {
-                    wikiTags = cardDataList.Find(card => card.DbfId == tmpCard.DbfId.ToString()).WikiTagsList?.Select(tag => new TagContent { Name = tag, ItemType = "Tag" }).ToList() ?? new List<TagContent>();
+                    wikiTags = cardDataList.Find(card => card.DbfId == tmpCard.DbfId.ToString()).WikiTagsList?.Select(tag => new TagContent { Name = tag, ItemType = "WikiTag" }).ToList() ?? new List<TagContent>();
                     keywords = cardDataList.Find(card => card.DbfId == tmpCard.DbfId.ToString()).KeywordsList?.Select(tag => new TagContent { Name = tag, ItemType = "Keyword" }).ToList() ?? new List<TagContent>();
                     races = cardDataList.Find(card => card.DbfId == tmpCard.DbfId.ToString()).RacesList?.Select(tag => new TagContent { Name = tag, ItemType = "Race" }).ToList() ?? new List<TagContent>();
                     wikiMechanics = cardDataList.Find(card => card.DbfId == tmpCard.DbfId.ToString()).WikiMechanicsList?.Select(tag => new TagContent { Name = tag, ItemType = "WikiMechanic" }).ToList() ?? new List<TagContent>();
@@ -186,13 +186,18 @@ namespace CardSearcher
 
                 // merge wikiTags, keywords, races, wikiMechanics
                 var tags = wikiTags.Concat(keywords).Concat(races).Concat(wikiMechanics).ToList();
+                foreach (var tag in tags)
+                {
+                    tag.ForeColor = colorDictionary[tag.ItemType][0];
+                    tag.BkgColor = colorDictionary[tag.ItemType][1];
+                }
 
                 _cardResults.Add(
                     new CardResult
                     {
                         ImageSource = image,
                         DisplayText = tmpCard.GetLocName(Locale.zhCN),
-                        Tags = tags,
+                        Tags = tags
                     }
                 ); // 添加到集合
             }
@@ -344,7 +349,7 @@ namespace CardSearcher
             public string DisplayText { get; set; }
 
             // 用于存储标签的列表
-            public List<TagContent> Tags { get; set; } = new List<TagContent>(); // 初始化一个空列表
+            public List<TagContent> Tags { get; set; }
         }
 
         private async void SearchFilterItems_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
