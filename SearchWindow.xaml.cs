@@ -21,6 +21,7 @@ using System.Windows.Shapes;
 using HearthDb;
 using HearthDb.CardDefs;
 using HearthDb.Enums;
+using Hearthstone_Deck_Tracker.Hearthstone.EffectSystem.Effects.Mage;
 
 namespace CardSearcher
 {
@@ -376,21 +377,35 @@ namespace CardSearcher
             // 根据标签进行搜索的逻辑
             // 这里假设您有一个方法可以根据标签获取卡片
             var resultList = await _cardSearcher.GetCardsByTags(tags);
-            var tags1 = tags.Take(tags.Count / 2).ToList();
-            var tags2 = tags.Skip(tags.Count / 2).ToList();
+            var cardDataList = _cardSearcher.CardDataList;
 
             // 遍历结果并下载图片
             foreach (var tmpCard in resultList)
             {
                 var image = await GetCardImageAsync(tmpCard.Id); // 获取卡片图片
+                var keywords = cardDataList.Find(card => card.Id == tmpCard.Id).KeywordsList?.Select(tag => new TagContent { Name = tag, ItemType = "Keywords" }).ToList() ?? new List<TagContent>();
+                var races = cardDataList.Find(card => card.Id == tmpCard.Id).RacesList?.Select(tag => new TagContent { Name = tag, ItemType = "Races" }).ToList() ?? new List<TagContent>();
+                var wikiTags = cardDataList.Find(card => card.Id == tmpCard.Id).WikiTagsList?.Select(tag => new TagContent { Name = tag, ItemType = "WikiTags" }).ToList() ?? new List<TagContent>();
+                var wikiMechanics = cardDataList.Find(card => card.Id == tmpCard.Id).WikiMechanicsList?.Select(tag => new TagContent { Name = tag, ItemType = "WikiMechanics" }).ToList() ?? new List<TagContent>();
+
+                // merge wikiTags, keywords, races, wikiMechanics
+                var ResultTags = races.Concat(wikiTags).Concat(wikiMechanics).Concat(keywords).ToList();
+                foreach (var tag in ResultTags)
+                {
+                    tag.ForeColor = colorDictionary[tag.ItemType][0];
+                    tag.BkgColor = colorDictionary[tag.ItemType][1];
+                }
+
                 var dbCard = _cardSearcher.GetBaconCards().FirstOrDefault(card => card.Id == tmpCard.Id);
+                var tags1 = ResultTags.Take(ResultTags.Count / 2).ToList();
+                var tags2 = ResultTags.Skip(ResultTags.Count / 2).ToList();
                 _cardResults.Add(
                     new CardResult
                     {
                         ImageSource = image,
                         DisplayText = dbCard?.GetLocName(Locale.zhCN),
                         Tags1 = tags1,
-                        Tags2 = tags2,
+                        Tags2 = tags2
                     }
                 ); // 添加到集合
             }
