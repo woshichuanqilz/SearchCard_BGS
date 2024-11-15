@@ -48,6 +48,8 @@ namespace CardSearcher
         private IEnumerable<HearthDb.Card> baconCards; // 添加成员变量
 
         private List<CardWikiData> cardDataList; // 添加成员变量
+        // make it can be accessed by other files
+        public List<(string Item, string Source)> combinedList; // 添加成员变量
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CardSearcher"/> class.
@@ -153,8 +155,22 @@ namespace CardSearcher
                     // 解析 JSON 数据并赋值给成员变量
                     cardDataList = JsonConvert.DeserializeObject<List<CardWikiData>>(json);
 
+                    // 遍历 cardDataList 中的每个项
                     foreach (var card in cardDataList)
                     {
+                        // 检查 Races 是否只包含一个子项且该子项为空字符串
+                        if (card.Races != null && card.Races.Count == 1 && string.IsNullOrEmpty(card.Races[0]))
+                        {
+                            card.Races[0] = "Neutral"; // 替换为空字符串的子项为 "Neutral"
+                        }
+                    }
+
+                    // 合并所有列表并标记来源 make it class member 
+                    combinedList = new List<(string Item, string Source)>();
+
+                    foreach (var card in cardDataList)
+                    {
+                        Console.WriteLine(card.Id);
                         if (!string.IsNullOrEmpty(card.StringTags))
                         {
                             card.TagsList = card.StringTags.Split(' ')
@@ -163,19 +179,29 @@ namespace CardSearcher
                                 .ToList(); // 转换为 List<string>
                         }
 
-                        // 处理 wikiMechanics 字段
-                        card.WikiMechanicsList = CleanWikiTags(card.WikiMechanics);
                         // 处理 wikiTags 字段 should split by "&amp;&amp;"
                         card.WikiTagsList = card.WikiTags?.Split(new[] { "&amp;&amp;" }, StringSplitOptions.None).ToList();
+                        // 处理 wikiMechanics 字段 should split by "&amp;&amp;"
+                        card.WikiMechanicsList = card.WikiMechanics?.Split(new[] { "&amp;&amp;" }, StringSplitOptions.None).ToList();
+                        // remove duplicated item in wikiMechanicsList with wikiTagsList ignore case and if WikiMechanicsList is not null
+                        if (card.WikiTagsList != null)
+                            card.WikiMechanicsList = card.WikiMechanicsList?.Where(item => !card.WikiTagsList.Contains(item, StringComparer.OrdinalIgnoreCase)).ToList();
+
                         // 处理 keywords 字段 and make it lower case
                         card.KeywordsList = card.Keywords?.ToLower().Split(' ').ToList(); // 将 keywords 转换为 List<string>
                         // 处理 Races 字段 should split by "&amp;&amp;"
                         card.RacesList = card.Races[0]?.Split(new[] { "&amp;&amp;" }, StringSplitOptions.None).ToList();
-                        // 如果 RacesList 的第一个元素为空，则设置为 "Neutral"
-                        if (card.RacesList != null && card.RacesList.FirstOrDefault() == "")
-                        {
-                            card.RacesList = new List<string> { "Neutral" };
-                        }
+
+
+                        // 合并所有列表并标记来源, 重复内容不添加
+                        if (card.WikiMechanicsList != null)
+                            combinedList.AddRange(card.WikiMechanicsList.Select(item => (item, "WikiMechanics")).Distinct());
+                        if (card.WikiTagsList != null)
+                            combinedList.AddRange(card.WikiTagsList.Select(item => (item, "WikiTags")).Distinct());
+                        if (card.KeywordsList != null)
+                            combinedList.AddRange(card.KeywordsList.Select(item => (item, "Keywords")).Distinct());
+                        if (card.RacesList != null)
+                            combinedList.AddRange(card.RacesList.Select(item => (item, "Races")).Distinct());
                     }
 
                     return cardDataList; // 返回包含关键字的 CardWikiData 列表

@@ -14,6 +14,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -76,6 +77,7 @@ namespace CardSearcher
         private readonly ObservableCollection<CardResult> _cardResults;
         private readonly ObservableCollection<SearchItem> _searchFilterItems;
         private readonly CardSearcher _cardSearcher;
+        private Dictionary<string, List<SolidColorBrush>> colorDictionary = new Dictionary<string, List<SolidColorBrush>>();
 
         public SearchWindow()
         {
@@ -85,6 +87,33 @@ namespace CardSearcher
             ResultsListView.ItemsSource = _cardResults;
             _searchFilterItems = new ObservableCollection<SearchItem>();
             SearchFilter.ItemsSource = _searchFilterItems;
+
+            // 在 DownloadAndParseJsonAsync 方法中
+            colorDictionary["WikiMechanics"] = new List<SolidColorBrush>
+            {
+                Brushes.White,
+                Brushes.Black,
+            };
+
+            colorDictionary["WikiTags"] = new List<SolidColorBrush>
+            {
+                Brushes.Black,
+                Brushes.Orange,
+                // 可以添加更多颜色
+            };
+
+            colorDictionary["Keywords"] = new List<SolidColorBrush>
+            {
+                Brushes.Black,
+                Brushes.Yellow
+            };
+
+            colorDictionary["Races"] = new List<SolidColorBrush>
+            {
+                Brushes.White,
+                Brushes.Blue
+                // 可以添加更多颜色
+            };
 
             // 订阅 CollectionChanged 事件
             _searchFilterItems.CollectionChanged += SearchFilterItems_CollectionChanged;
@@ -161,17 +190,12 @@ namespace CardSearcher
                         .RacesList;
                 }
 
-                if (keywords != null)
-                {
-                    tags.AddRange(keywords);
-                }
-
                 _cardResults.Add(
                     new CardResult
                     {
                         ImageSource = image,
                         DisplayText = tmpCard.GetLocName(Locale.zhCN),
-                        Tags = tags,
+                        WikiTags = tags,
                         Races = races,
                     }
                 ); // 添加到集合
@@ -262,8 +286,8 @@ namespace CardSearcher
                     new SearchItem
                     {
                         Name = clickedItem.ToString(),
-                        Color = Brushes.Blue,
-                        ForeColor = Brushes.White,
+                        ForeColor = colorDictionary["Races"][0],
+                        Color = colorDictionary["Races"][1],
                         ItemType = "Race",
                     }
                 );
@@ -279,8 +303,8 @@ namespace CardSearcher
                     new SearchItem
                     {
                         Name = clickedItem.ToString(),
-                        Color = Brushes.Orange,
-                        ForeColor = Brushes.Black,
+                        ForeColor = colorDictionary["WikiTags"][0],
+                        Color = colorDictionary["WikiTags"][1],
                         ItemType = "Tag",
                     }
                 );
@@ -322,6 +346,28 @@ namespace CardSearcher
             }
         }
 
+        // ... existing code ...
+        private void DropBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var inputText = DropBox.Text;
+
+            if (inputText.Length >= 2)
+            {
+                var matches = _cardSearcher.combinedList
+                    .Where(item => item.Item1.StartsWith(inputText, StringComparison.OrdinalIgnoreCase)) // 匹配每个 item 的第一项
+                    .Select(item => item.Item1) // 选择匹配的项
+                    .Distinct() // 去重
+                    .ToList();
+
+                DropBox.ItemsSource = matches; // 更新下拉列表
+                DropBox.IsDropDownOpen = true;
+            }
+            else
+            {
+                DropBox.ItemsSource = null; // 清空下拉列表
+            }
+        }
+
         // 用于存储卡片结果的类
         public class CardResult
         {
@@ -329,8 +375,11 @@ namespace CardSearcher
             public string DisplayText { get; set; }
 
             // 用于存储标签的列表
-            public List<string> Tags { get; set; } = new List<string>(); // 初始化一个空列表
+            public List<string> WikiTags { get; set; } = new List<string>(); // 初始化一个空列表
             public List<string> Races { get; set; } = new List<string>(); // 初始化为一个空列表
+            public List<string> Keywords { get; set; } = new List<string>(); // 初始化为一个空列表
+
+            public List<string> WikiMechanics { get; set; } = new List<string>(); // 初始化为一个空列表
         }
 
         private async void SearchFilterItems_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -372,8 +421,9 @@ namespace CardSearcher
                     {
                         ImageSource = image,
                         DisplayText = dbCard?.GetLocName(Locale.zhCN),
-                        Tags = tmpCard.WikiTagsList,
-                        // 如果 RacesList 的第一个元素为空，则设置为 "Neutral"
+                        WikiTags = tmpCard.WikiTagsList,
+                        Keywords = tmpCard.KeywordsList,
+                        WikiMechanics = tmpCard.WikiMechanicsList,
                         Races = tmpCard.RacesList
                     }
                 ); // 添加到集合
