@@ -109,6 +109,7 @@
                             FontSize="14" />
 
                         <!-- 显示 Race 标签的 StackPanel -->
+                        <!--<ItemsControl ItemsSource="{Binding Tags}">-->
                         <ItemsControl ItemsSource="{Binding Tags}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
