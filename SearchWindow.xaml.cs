@@ -31,6 +31,7 @@ namespace CardSearcher
         private SolidColorBrush _bkgColor;
         private SolidColorBrush _foreColor;
         public string ItemType { get; set; }
+        private Locale _locale;
 
         public string Name
         {
@@ -80,6 +81,8 @@ namespace CardSearcher
         private readonly ObservableCollection<SearchItem> _searchFilterItems;
         private readonly CardSearcher _cardSearcher;
         private Dictionary<string, List<SolidColorBrush>> colorDictionary = new Dictionary<string, List<SolidColorBrush>>();
+        private bool _isSelectingFromDropBox = false; // 添加标志变量
+        private Locale _locale;
 
         public class TagContent
         {
@@ -109,11 +112,14 @@ namespace CardSearcher
             _searchFilterItems = new ObservableCollection<SearchItem>();
             SearchFilter.ItemsSource = _searchFilterItems;
 
+            // 初始化 _locale
+            _locale = Locale.enUS; // 或者根据需要设置为其他值
+
             // 在 DownloadAndParseJsonAsync 方法中
             colorDictionary["WikiMechanics"] = new List<SolidColorBrush>
             {
                 Brushes.White,
-                Brushes.Black,
+                new SolidColorBrush(Color.FromRgb(133, 20, 75))
             };
 
             colorDictionary["WikiTags"] = new List<SolidColorBrush>
@@ -150,7 +156,7 @@ namespace CardSearcher
             if (tmpId.Length < 3) return;
             // 获取匹配的卡片
             var resultList = new List<Card>();
-            var isBg = tmpId.StartsWith("bg");
+            var isBg = tmpId.ToLower().StartsWith("bg");
             var isNumber = tmpId.All(char.IsDigit);
             // tmp_Id is start with "bg"
             if (isBg)
@@ -218,7 +224,7 @@ namespace CardSearcher
                     new CardResult
                     {
                         ImageSource = image,
-                        DisplayText = tmpCard.GetLocName(Locale.zhCN),
+                        DisplayText = tmpCard.GetLocName(_locale),
                         Tags1 = tags1,
                         Tags2 = tags2
                     }
@@ -313,7 +319,7 @@ namespace CardSearcher
                 ItemType = border.Tag as string // 设置类型为 tags 或 races
             };
 
-            // 检查 SearchFilterItems 中是否已经存在该项
+            // 检查 SearchFilterItems 中是否已经存在项
             if (!_searchFilterItems.Any(i => i.Name == newItem.Name && i.ItemType == newItem.ItemType))
             {
                 // 将新项添加到 SearchFilterItems
@@ -338,6 +344,7 @@ namespace CardSearcher
         // ... existing code ...
         private void DropBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            if (_isSelectingFromDropBox) return; // 如果正在选择下拉框中的项，则返回
             var inputText = DropBox.Text;
 
             if (inputText.Length >= 2)
@@ -379,7 +386,7 @@ namespace CardSearcher
             var resultList = await _cardSearcher.GetCardsByTags(tags);
             var cardDataList = _cardSearcher.CardDataList;
 
-            // 遍历结果并下载图片
+            // 遍历结果并下载��片
             foreach (var tmpCard in resultList)
             {
                 var image = await GetCardImageAsync(tmpCard.Id); // 获取卡片图片
@@ -403,12 +410,70 @@ namespace CardSearcher
                     new CardResult
                     {
                         ImageSource = image,
-                        DisplayText = dbCard?.GetLocName(Locale.zhCN),
+                        DisplayText = dbCard?.GetLocName(_locale),
                         Tags1 = tags1,
                         Tags2 = tags2
                     }
                 ); // 添加到集合
             }
+        }
+
+        private string GetItemType(string selectedItem)
+        {
+            if (_cardSearcher.AllWikiTagsList.Contains(selectedItem))
+            {
+                return "WikiTags";
+            }
+            else if (_cardSearcher.AllKeywordsList.Contains(selectedItem))
+            {
+                return "Keywords";
+            }
+            else if (_cardSearcher.AllWikiMechanicsList.Contains(selectedItem))
+            {
+                return "WikiMechanics";
+            }
+            else if (_cardSearcher.AllRacesList.Contains(selectedItem))
+            {
+                return "Races";
+            }
+            return "Error";
+        }
+
+        private void DropBoxTextInput_KeyDown(object sender, KeyEventArgs e) // 添加键盘事件处理
+        {
+            if (e.Key == Key.Enter && DropBox.SelectedItem != null) // 检查是否按下回车并且有选中的项目
+            {
+                var selectedItem = DropBox.SelectedItem.ToString(); // 获取选中的项目
+                DropBox.Text = selectedItem; // 设置组合框的文字为选中的项目
+
+                var ItemType = GetItemType(selectedItem);
+                var newItem = new SearchItem
+                {
+                    Name = selectedItem, // 设置名称
+                    ForeColor = colorDictionary[ItemType][0],
+                    BkgColor = colorDictionary[ItemType][1],
+                    ItemType = ItemType
+                };
+
+                // 检查 SearchFilterItems 中是否已经存在项
+                if (!_searchFilterItems.Any(i => i.Name == newItem.Name && i.ItemType == newItem.ItemType))
+                {
+                    // 将新项添加到 SearchFilterItems
+                    _searchFilterItems.Add(newItem);
+                }
+            }
+        }
+
+        private void DropBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _isSelectingFromDropBox = false; // 在选择更改时重置标志
+        }
+
+        private void ClearFilterButton_Click(object sender, RoutedEventArgs e)
+        {
+            _searchFilterItems.Clear(); // 清空过滤器项
+            // 如果需要，您还可以清空其他相关的 UI 元素，例如 ResultsListView
+            _cardResults.Clear(); // 清空搜索结果
         }
     }
 }

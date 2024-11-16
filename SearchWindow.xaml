@@ -26,11 +26,18 @@
                 VerticalContentAlignment="Center" />
             <ComboBox x:Name="DropBox" Grid.Column="1" MinWidth="100" FontSize="22" MaxWidth="300"
                 Margin="5,0,5,0" VerticalContentAlignment="Center" IsEditable="True"
-                TextBoxBase.TextChanged="DropBox_TextChanged" />
+                TextBoxBase.TextChanged="DropBox_TextChanged"
+                PreviewKeyDown="DropBoxTextInput_KeyDown" />
         </Grid>
         <!-- set border set width 100%-->
 
-        <ListView x:Name="SearchFilter" Margin="5,1" Grid.Row="1" HorizontalAlignment="Stretch"
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="9*" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+        <ListView x:Name="SearchFilter" Margin="5,1" Grid.Column="0" HorizontalAlignment="Stretch"
             ScrollViewer.VerticalScrollBarVisibility="Auto">
             <!-- 将 StackPanel 改为 ListView -->
             <ListView.ItemsPanel>
@@ -63,6 +70,12 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+        <Button Grid.Column="1" x:Name="ClearFilterButton" Content="Clear" Width="70" Height="25"
+            Margin="0,0, 5,0" Click="ClearFilterButton_Click" HorizontalAlignment="Right" />
+        </Grid>
+
+        <!-- 添加清除过滤器的按钮 -->
+
         <!-- ListView for Search Results -->
         <ListView x:Name="ResultsListView" Grid.Row="2" Margin="5,1"
             ScrollViewer.VerticalScrollBarVisibility="Auto">

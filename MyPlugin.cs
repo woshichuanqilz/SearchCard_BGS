@@ -24,6 +24,7 @@ using System.Net.Http;
 using Newtonsoft.Json; // 确保你已经安装了 Newtonsoft.Json 包
 using System.Threading.Tasks;
 using static CardSearcher.SearchWindow;
+using System.Security.Cryptography.X509Certificates;
 
 namespace CardSearcher
 {
@@ -51,6 +52,12 @@ namespace CardSearcher
         private List<CardWikiData> cardDataList; // 添加成员变量
         // make it can be accessed by other files
         public List<(string Item, string Source)> combinedList; // 添加成员变量
+
+        public List<string> AllWikiTagsList;
+        public List<string> AllKeywordsList;
+        public List<string> AllWikiMechanicsList;
+        public List<string> AllRacesList;
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CardSearcher"/> class.
@@ -171,7 +178,6 @@ namespace CardSearcher
 
                     foreach (var card in cardDataList)
                     {
-                        Console.WriteLine(card.Id);
                         if (!string.IsNullOrEmpty(card.StringTags))
                         {
                             card.TagsList = card.StringTags.Split(' ')
@@ -212,6 +218,12 @@ namespace CardSearcher
                             .ToList();
                     }
 
+                    // 提取所有 WikiTags , Keywords, WikiMechanics, Races
+                    AllWikiTagsList = combinedList.Where(item => item.Source == "WikiTags").Select(item => item.Item1).Distinct().ToList();
+                    AllKeywordsList = combinedList.Where(item => item.Source == "Keywords").Select(item => item.Item1).Distinct().ToList();
+                    AllWikiMechanicsList = combinedList.Where(item => item.Source == "WikiMechanics").Select(item => item.Item1).Distinct().ToList();
+                    AllRacesList = combinedList.Where(item => item.Source == "Races").Select(item => item.Item1).Distinct().ToList();
+
                     return cardDataList; // 返回包含关键字的 CardWikiData 列表
                 }
                 catch (HttpRequestException)
@@ -220,6 +232,7 @@ namespace CardSearcher
                     MessageBox.Show("Download data error. Please check the proxy code in this downloadAndParseJsonAsync function.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
+
 
             return new List<CardWikiData>(); // 返回空列表
         }
