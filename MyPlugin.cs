@@ -214,15 +214,10 @@ namespace CardSearcher
 
                     return cardDataList; // 返回包含关键字的 CardWikiData 列表
                 }
-                catch (HttpRequestException e)
+                catch (HttpRequestException)
                 {
                     // 处理请求异常
-                    Console.WriteLine($"请求失败: {e.Message}");
-                }
-                catch (Exception e)
-                {
-                    // 处理其他异常
-                    Console.WriteLine($"发生错误: {e.Message}");
+                    MessageBox.Show("Download data error. Please check the proxy code in this downloadAndParseJsonAsync function.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
 
